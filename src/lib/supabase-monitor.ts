@@ -97,7 +97,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
     clearInterval(connectionMonitoringInterval);
   }
   
-  // Perform initial check - using try/catch within an async function
+  // Perform initial check - using try/catch within an async IIFE
   (async () => {
     try {
       const status = await checkSupabaseConnection();
