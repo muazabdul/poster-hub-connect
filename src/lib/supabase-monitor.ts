@@ -95,6 +95,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
   // Clear any existing interval
   if (connectionMonitoringInterval) {
     clearInterval(connectionMonitoringInterval);
+    connectionMonitoringInterval = null;
   }
   
   // Perform initial check
