@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Category {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   thumbnail?: string | null; // Make thumbnail optional
   count?: number;
 }

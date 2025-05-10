@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,6 +73,25 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       
       // Upload new image if selected
       if (imageFile) {
+        // Make sure the bucket exists
+        const { data: bucketData, error: bucketError } = await supabase
+          .storage
+          .getBucket('category_thumbnails');
+        
+        if (bucketError && bucketError.message !== 'The resource was not found') {
+          console.error("Error checking bucket:", bucketError);
+          toast.error("Failed to check storage bucket");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!bucketData) {
+          // Create the bucket if it doesn't exist
+          await supabase.storage.createBucket('category_thumbnails', {
+            public: true
+          });
+        }
+        
         thumbnailUrl = await uploadImage(imageFile, "category_thumbnails", "category_thumbnails");
         if (!thumbnailUrl) {
           toast.error("Failed to upload thumbnail");

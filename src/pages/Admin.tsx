@@ -58,6 +58,12 @@ const Admin = () => {
     }
   });
   const [loading, setLoading] = useState(true);
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    totalPosters: 0,
+    totalDownloads: 0,
+    totalCategories: 0
+  });
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -76,6 +82,46 @@ const Admin = () => {
     };
 
     loadSettings();
+
+    const fetchAdminStats = async () => {
+      try {
+        // Fetch total users
+        const { count: usersCount, error: usersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch total posters
+        const { count: postersCount, error: postersError } = await supabase
+          .from('posters')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch total downloads
+        const { count: downloadsCount, error: downloadsError } = await supabase
+          .from('downloads')
+          .select('*', { count: 'exact', head: true });
+        
+        // Fetch total categories
+        const { count: categoriesCount, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*', { count: 'exact', head: true });
+
+        if (usersError || postersError || downloadsError || categoriesError) {
+          console.error("Error fetching admin stats", { usersError, postersError, downloadsError, categoriesError });
+          return;
+        }
+
+        setAdminStats({
+          totalUsers: usersCount || 0,
+          totalPosters: postersCount || 0,
+          totalDownloads: downloadsCount || 0,
+          totalCategories: categoriesCount || 0
+        });
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+      }
+    };
+
+    fetchAdminStats();
   }, []);
 
   const handleViewAllUsers = () => {
@@ -317,7 +363,7 @@ const Admin = () => {
                       <div className="flex justify-between">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                          <h3 className="text-2xl font-bold mt-1">1,274</h3>
+                          <h3 className="text-2xl font-bold mt-1">{adminStats.totalUsers.toLocaleString()}</h3>
                           <p className="text-xs flex items-center mt-1 text-green-600">
                             <ArrowUp className="h-3 w-3 mr-1" /> 
                             <span>12% from last month</span>
@@ -335,7 +381,7 @@ const Admin = () => {
                       <div className="flex justify-between">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Total Posters</p>
-                          <h3 className="text-2xl font-bold mt-1">349</h3>
+                          <h3 className="text-2xl font-bold mt-1">{adminStats.totalPosters.toLocaleString()}</h3>
                           <p className="text-xs flex items-center mt-1 text-green-600">
                             <ArrowUp className="h-3 w-3 mr-1" /> 
                             <span>8% from last month</span>
@@ -353,7 +399,7 @@ const Admin = () => {
                       <div className="flex justify-between">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Downloads</p>
-                          <h3 className="text-2xl font-bold mt-1">12,345</h3>
+                          <h3 className="text-2xl font-bold mt-1">{adminStats.totalDownloads.toLocaleString()}</h3>
                           <p className="text-xs flex items-center mt-1 text-green-600">
                             <ArrowUp className="h-3 w-3 mr-1" /> 
                             <span>15% from last month</span>
@@ -383,14 +429,14 @@ const Admin = () => {
                     <CardContent className="p-6">
                       <div className="flex justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground">Active Plans</p>
-                          <h3 className="text-2xl font-bold mt-1">3</h3>
+                          <p className="text-sm font-medium text-muted-foreground">Categories</p>
+                          <h3 className="text-2xl font-bold mt-1">{adminStats.totalCategories.toLocaleString()}</h3>
                           <p className="text-xs flex items-center mt-1 text-muted-foreground">
-                            <span>All plans active</span>
+                            <span>All categories active</span>
                           </p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-                          <CreditCard className="h-6 w-6 text-orange-600" />
+                          <FolderIcon className="h-6 w-6 text-orange-600" />
                         </div>
                       </div>
                     </CardContent>
