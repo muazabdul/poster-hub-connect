@@ -15,6 +15,7 @@ import PlanForm from "@/components/admin/PlanForm";
 import CategoriesTable from "@/components/admin/CategoriesTable";
 import PostersTable from "@/components/admin/PostersTable";
 import CategoryForm from "@/components/admin/CategoryForm";
+import ConnectionStatus from "@/components/admin/ConnectionStatus";
 import { 
   Sidebar,
   SidebarContent,
@@ -149,8 +150,9 @@ const Admin = () => {
             </SidebarContent>
             
             <SidebarFooter>
-              <div className="px-4 py-4 text-xs text-muted-foreground">
-                Admin Panel v1.0
+              <div className="px-4 py-4 flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Admin Panel v1.0</span>
+                <ConnectionStatus />
               </div>
             </SidebarFooter>
           </Sidebar>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,43 +47,60 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
     setIsLoading(true);
     
     try {
+      console.log("Saving category...", isEditing ? "updating" : "creating", {
+        values,
+        id: initialData?.id
+      });
+      
       // In a real implementation, this would upload the image to storage
       // For now, we'll just simulate this
       const thumbnail = imagePreview; // This would be the uploaded image URL
       
-      if (isEditing) {
+      if (isEditing && initialData?.id) {
         // Update existing category
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('categories')
           .update({
             name: values.name,
             description: values.description,
             // In a real implementation, we would update the thumbnail too
           })
-          .eq('id', initialData.id);
+          .eq('id', initialData.id)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating category:", error);
+          throw error;
+        }
+        console.log("Category updated successfully:", data);
         toast.success("Category updated successfully!");
       } else {
         // Create new category
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('categories')
           .insert({
             name: values.name,
             description: values.description,
             // In a real implementation, we would insert the thumbnail too
-          });
+          })
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error creating category:", error);
+          throw error;
+        }
+        console.log("Category created successfully:", data);
         toast.success("Category added successfully!");
       }
       
       form.reset();
       setImagePreview(null);
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving category:", error);
-      toast.error("Failed to save category. Please try again.");
+      toast.error("Failed to save category. Please try again.", {
+        description: error.message || "Database connection issue",
+      });
     } finally {
       setIsLoading(false);
     }

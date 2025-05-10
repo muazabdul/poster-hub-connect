@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, PlusCircle } from "lucide-react";
+import { Edit, Trash2, PlusCircle, RefreshCw } from "lucide-react";
 import PlanForm from "./PlanForm";
 import { Json } from "@/integrations/supabase/types";
 
@@ -62,6 +62,7 @@ export default function PlansTable() {
     try {
       setLoading(true);
       setError(null);
+      console.log("Fetching plans...");
       
       const { data, error } = await supabase
         .from("plans")
@@ -71,10 +72,13 @@ export default function PlansTable() {
       if (error) {
         console.error("Error fetching plans:", error);
         setError(`Failed to load plans: ${error.message}`);
-        toast.error("Failed to load plans");
+        toast.error("Failed to load plans", {
+          description: error.message,
+        });
         throw error;
       }
 
+      console.log("Plans fetched:", data);
       // Convert the data to ensure features is always string[]
       const formattedPlans: Plan[] = (data || []).map(plan => ({
         ...plan,
@@ -165,13 +169,26 @@ export default function PlansTable() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-medium">Subscription Plans</h3>
-        <Button 
-          onClick={handleAddPlan} 
-          className="bg-brand-purple hover:bg-brand-darkPurple flex items-center gap-2"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Add New Plan
-        </Button>
+        <div className="flex gap-2">
+          {error && (
+            <Button 
+              onClick={fetchPlans} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          )}
+          <Button 
+            onClick={handleAddPlan} 
+            className="bg-brand-purple hover:bg-brand-darkPurple flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Add New Plan
+          </Button>
+        </div>
       </div>
       
       {loading ? (
@@ -180,8 +197,14 @@ export default function PlansTable() {
         </div>
       ) : error ? (
         <div className="text-center py-8 border rounded-md">
+          <div className="text-red-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
           <p className="text-muted-foreground mb-4">{error}</p>
           <Button onClick={handleRetry} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </div>

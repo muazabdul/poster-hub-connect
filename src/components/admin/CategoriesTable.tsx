@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import CategoryForm from "./CategoryForm";
@@ -35,6 +35,7 @@ interface Category {
 const CategoriesTable = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -42,17 +43,29 @@ const CategoriesTable = () => {
 
   const fetchCategories = async () => {
     setLoading(true);
+    setError(null);
     try {
+      console.log("Fetching categories...");
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .order('name');
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching categories:", error);
+        setError(`Failed to load categories: ${error.message}`);
+        toast.error("Failed to load categories", {
+          description: error.message,
+          duration: 5000,
+        });
+        throw error;
+      }
+      
+      console.log("Categories fetched:", data);
       setCategories(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching categories:", error);
-      toast.error("Failed to load categories");
+      setError("Failed to load categories. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -89,30 +102,64 @@ const CategoriesTable = () => {
       
       toast.success("Category deleted successfully");
       fetchCategories();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting category:", error);
-      toast.error("Failed to delete category");
+      toast.error("Failed to delete category", {
+        description: error.message,
+        duration: 5000,
+      });
     } finally {
       setDeleteDialogOpen(false);
     }
+  };
+
+  const handleRetry = () => {
+    fetchCategories();
   };
 
   return (
     <div>
       <div className="flex justify-between items-center p-4">
         <h2 className="text-xl font-semibold">Categories Management</h2>
-        <Button 
-          onClick={handleAdd}
-          className="bg-brand-purple hover:bg-brand-darkPurple"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
+        <div className="flex gap-2">
+          {error && (
+            <Button 
+              onClick={handleRetry} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          )}
+          <Button 
+            onClick={handleAdd}
+            className="bg-brand-purple hover:bg-brand-darkPurple"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Category
+          </Button>
+        </div>
       </div>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin h-8 w-8 border-4 border-brand-purple border-t-transparent rounded-full"></div>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center p-8 text-center border rounded-md">
+          <div className="text-red-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">{error}</h3>
+          <p className="text-sm text-gray-500 mb-4">Please check your connection and try again</p>
+          <Button onClick={handleRetry} className="bg-brand-purple hover:bg-brand-darkPurple">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
         </div>
       ) : (
         <div className="rounded-md overflow-hidden">
