@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, PlusCircle } from "lucide-react";
 import PlanForm from "./PlanForm";
+import { Json } from "@/integrations/supabase/types";
 
 interface Plan {
   id: string;
@@ -68,7 +68,17 @@ export default function PlansTable() {
         throw error;
       }
 
-      setPlans(data || []);
+      // Convert the data to ensure features is always string[]
+      const formattedPlans: Plan[] = (data || []).map(plan => ({
+        ...plan,
+        features: Array.isArray(plan.features) 
+          ? plan.features 
+          : (typeof plan.features === 'string' 
+              ? JSON.parse(plan.features as string)
+              : plan.features as string[] || [])
+      }));
+
+      setPlans(formattedPlans);
     } catch (error: any) {
       console.error("Error fetching plans:", error);
       toast.error("Failed to load plans");
