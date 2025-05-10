@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { v4 as uuidv4 } from 'uuid';
 
 const categorySchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
@@ -31,8 +32,9 @@ interface CategoryFormProps {
 const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.thumbnail || null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const isEditing = !!initialData?.id;
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const isMobile = useIsMobile();
   
   const form = useForm<z.infer<typeof categorySchema>>({
@@ -43,14 +45,68 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
     },
   });
 
+  useEffect(() => {
+    // Check admin status when component mounts
+    if (!isAdmin) {
+      console.log("User is not admin, redirecting or showing warning");
+    }
+  }, [isAdmin]);
+
+  const uploadThumbnail = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `category_thumbnails/${fileName}`;
+
+      // Create storage bucket if it doesn't exist
+      const { data: bucketData, error: bucketError } = await supabase
+        .storage
+        .createBucket('category_thumbnails', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+        });
+      
+      if (bucketError && bucketError.message !== 'Bucket already exists') {
+        console.error("Error creating bucket:", bucketError);
+        throw bucketError;
+      }
+
+      // Upload the file
+      const { error: uploadError } = await supabase
+        .storage
+        .from('category_thumbnails')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Error uploading thumbnail:", uploadError);
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data } = supabase
+        .storage
+        .from('category_thumbnails')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error in uploadThumbnail:", error);
+      return null;
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof categorySchema>) => {
-    if (!imagePreview) {
+    if (!imagePreview && !isEditing) {
       toast.error("Please upload a thumbnail for the category");
       return;
     }
     
-    if (!isAdmin) {
+    if (!isAdmin || !user) {
       toast.error("You don't have permission to perform this action");
+      console.error("User is not admin or not authenticated:", { isAdmin, userId: user?.id });
       return;
     }
     
@@ -60,12 +116,21 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       console.log("Saving category...", isEditing ? "updating" : "creating", {
         values,
         id: initialData?.id,
-        isAdmin
+        isAdmin,
+        userId: user.id
       });
       
-      // In a real implementation, this would upload the image to storage
-      // For now, we'll just simulate this
-      const thumbnail = imagePreview; // This would be the uploaded image URL
+      let thumbnailUrl = initialData?.thumbnail || null;
+      
+      // Upload new image if selected
+      if (imageFile) {
+        thumbnailUrl = await uploadThumbnail(imageFile);
+        if (!thumbnailUrl) {
+          toast.error("Failed to upload thumbnail");
+          setIsLoading(false);
+          return;
+        }
+      }
       
       if (isEditing && initialData?.id) {
         // Update existing category
@@ -74,7 +139,8 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
           .update({
             name: values.name,
             description: values.description,
-            // In a real implementation, we would update the thumbnail too
+            thumbnail: thumbnailUrl,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', initialData.id)
           .select();
@@ -92,7 +158,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
           .insert({
             name: values.name,
             description: values.description,
-            // In a real implementation, we would insert the thumbnail too
+            thumbnail: thumbnailUrl,
           })
           .select();
           
@@ -106,6 +172,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       
       form.reset();
       setImagePreview(null);
+      setImageFile(null);
       onSuccess();
     } catch (error: any) {
       console.error("Error saving category:", error);
@@ -126,6 +193,10 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       return;
     }
     
+    // Store the file for later upload
+    setImageFile(file);
+    
+    // Create preview
     const reader = new FileReader();
     reader.onload = () => {
       setImagePreview(reader.result as string);
@@ -195,7 +266,10 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
                       variant="destructive"
                       size="sm"
                       className="absolute top-2 right-2"
-                      onClick={() => setImagePreview(null)}
+                      onClick={() => {
+                        setImagePreview(null);
+                        setImageFile(null);
+                      }}
                     >
                       Remove
                     </Button>
