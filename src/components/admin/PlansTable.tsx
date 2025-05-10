@@ -71,11 +71,7 @@ export default function PlansTable() {
       // Convert the data to ensure features is always string[]
       const formattedPlans: Plan[] = (data || []).map(plan => ({
         ...plan,
-        features: Array.isArray(plan.features) 
-          ? plan.features 
-          : (typeof plan.features === 'string' 
-              ? JSON.parse(plan.features as string)
-              : plan.features as string[] || [])
+        features: parseFeatures(plan.features)
       }));
 
       setPlans(formattedPlans);
@@ -86,6 +82,30 @@ export default function PlansTable() {
       setLoading(false);
     }
   }
+
+  // Helper function to handle all possible types of the features field
+  const parseFeatures = (features: Json): string[] => {
+    if (!features) return [];
+    
+    if (Array.isArray(features)) {
+      return features.map(item => String(item));
+    }
+    
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features);
+        return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
+      } catch {
+        return [features];
+      }
+    }
+    
+    if (typeof features === 'object') {
+      return Object.values(features).map(item => String(item));
+    }
+    
+    return [String(features)];
+  };
 
   const handleAddPlan = () => {
     setIsAddDialogOpen(true);
