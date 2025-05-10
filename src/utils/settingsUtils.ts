@@ -56,7 +56,15 @@ export async function getSettings(): Promise<Settings> {
       return defaultSettings;
     }
 
-    return data || defaultSettings;
+    // Convert the database JSON to our strongly typed Settings interface
+    const settings: Settings = {
+      id: data.id,
+      payment: data.payment as PaymentGatewaySettings,
+      appearance: data.appearance as AppearanceSettings,
+      updated_at: data.updated_at
+    };
+
+    return settings || defaultSettings;
   } catch (error) {
     console.error("Error in getSettings:", error);
     return defaultSettings;
@@ -70,10 +78,18 @@ export async function updateSettings(settings: Settings): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
     
+    // Convert our strongly typed Settings to the database JSON format
+    const dbSettings = {
+      id: updatedSettings.id,
+      payment: updatedSettings.payment as any,
+      appearance: updatedSettings.appearance as any,
+      updated_at: updatedSettings.updated_at
+    };
+    
     // Using direct insert/update instead of RPC
     const { error } = await supabase
       .from('settings')
-      .upsert(updatedSettings, {
+      .upsert(dbSettings, {
         onConflict: 'id'
       });
 
