@@ -35,7 +35,6 @@ const Categories = () => {
         const categoriesWithCount = (data || []).map((cat) => ({
           ...cat,
           count: Math.floor(Math.random() * 15) + 1, // Mock count between 1-15
-          thumbnail: null, // Set a default null value since it doesn't exist in the database yet
         }));
         
         setCategories(categoriesWithCount);
