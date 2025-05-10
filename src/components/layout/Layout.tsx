@@ -21,8 +21,8 @@ const Layout = ({
     <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
       <Header />
       <main className={cn(
-        "flex-1 py-4", 
-        fullWidth ? "" : "container",
+        "flex-1", 
+        fullWidth ? "w-full" : "container py-4",
         className
       )}>
         {children}

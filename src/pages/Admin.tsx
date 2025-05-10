@@ -11,6 +11,8 @@ import PlansTable from "@/components/admin/PlansTable";
 import UsersTable from "@/components/admin/UsersTable";
 import DashboardMetrics from "@/components/admin/DashboardMetrics";
 import PlanForm from "@/components/admin/PlanForm";
+import CategoriesTable from "@/components/admin/CategoriesTable";
+import PostersTable from "@/components/admin/PostersTable";
 import { 
   Sidebar,
   SidebarContent,
@@ -29,6 +31,7 @@ import {
 const Admin = () => {
   const [addPosterOpen, setAddPosterOpen] = useState(false);
   const [addPlanOpen, setAddPlanOpen] = useState(false);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
@@ -78,20 +81,20 @@ const Admin = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton 
-                        isActive={activeTab === "plans"} 
-                        onClick={() => setActiveTab("plans")}
-                      >
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        <span>Plans</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
                         isActive={activeTab === "categories"} 
                         onClick={() => setActiveTab("categories")}
                       >
                         <FolderIcon className="mr-2 h-4 w-4" />
                         <span>Categories</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton 
+                        isActive={activeTab === "plans"} 
+                        onClick={() => setActiveTab("plans")}
+                      >
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        <span>Plans</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
@@ -154,6 +157,28 @@ const Admin = () => {
                       </DialogHeader>
                       <div className="my-4">
                         <PosterForm onSuccess={() => setAddPosterOpen(false)} />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                
+                {activeTab === "categories" && (
+                  <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-brand-purple hover:bg-brand-darkPurple">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add New Category
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[800px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Category</DialogTitle>
+                        <DialogDescription>
+                          Create a new category for posters.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="my-4">
+                        <CategoryForm onSuccess={() => setAddCategoryOpen(false)} />
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -368,123 +393,8 @@ const Admin = () => {
             {activeTab === "posters" && (
               <Card>
                 <CardContent className="p-0">
-                  <div className="rounded-md">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Poster
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Category
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Added On
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Downloads
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-card divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0 mr-3">
-                                <div className="h-10 w-10 rounded-sm bg-gray-200"></div>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  PM Kisan Scheme
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Government Schemes</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">May 10, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">1,245</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="outline" size="sm">Edit</Button>
-                              <Button variant="destructive" size="sm">Delete</Button>
-                            </div>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0 mr-3">
-                                <div className="h-10 w-10 rounded-sm bg-gray-200"></div>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  Digital Banking Services
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Banking</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">May 8, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">892</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="outline" size="sm">Edit</Button>
-                              <Button variant="destructive" size="sm">Delete</Button>
-                            </div>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0 mr-3">
-                                <div className="h-10 w-10 rounded-sm bg-gray-200"></div>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  Aadhaar Card Services
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Digital Services</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">May 5, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">567</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="outline" size="sm">Edit</Button>
-                              <Button variant="destructive" size="sm">Delete</Button>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  <PostersTable />
                 </CardContent>
-                <CardFooter className="flex justify-between p-4 border-t">
-                  <Button variant="outline">Previous</Button>
-                  <Button variant="outline">Next</Button>
-                </CardFooter>
               </Card>
             )}
             
@@ -498,14 +408,8 @@ const Admin = () => {
             
             {activeTab === "categories" && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Categories Management</CardTitle>
-                  <CardDescription>
-                    Create and manage poster categories.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Categories management content goes here.</p>
+                <CardContent className="p-0">
+                  <CategoriesTable />
                 </CardContent>
               </Card>
             )}
