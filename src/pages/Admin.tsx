@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,9 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Users, Image, Plus, FolderIcon, User, CreditCard } from "lucide-react";
 import PosterForm from "@/components/admin/PosterForm";
 import PlansTable from "@/components/admin/PlansTable";
+import UsersTable from "@/components/admin/UsersTable";
+import DashboardMetrics from "@/components/admin/DashboardMetrics";
+import PlanForm from "@/components/admin/PlanForm";
 
 const Admin = () => {
   const [addPosterOpen, setAddPosterOpen] = useState(false);
+  const [addPlanOpen, setAddPlanOpen] = useState(false);
 
   return (
     <Layout>
@@ -18,25 +21,52 @@ const Admin = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           
-          <Dialog open={addPosterOpen} onOpenChange={setAddPosterOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-brand-purple hover:bg-brand-darkPurple">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Poster
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px]">
-              <DialogHeader>
-                <DialogTitle>Add New Poster</DialogTitle>
-                <DialogDescription>
-                  Upload a new poster to make available for CSC owners.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="my-4">
-                <PosterForm onSuccess={() => setAddPosterOpen(false)} />
-              </div>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Dialog open={addPosterOpen} onOpenChange={setAddPosterOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-brand-purple hover:bg-brand-darkPurple">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Poster
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Poster</DialogTitle>
+                  <DialogDescription>
+                    Upload a new poster to make available for CSC owners.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="my-4">
+                  <PosterForm onSuccess={() => setAddPosterOpen(false)} />
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={addPlanOpen} onOpenChange={setAddPlanOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-brand-purple hover:bg-brand-darkPurple">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Plan
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Plan</DialogTitle>
+                  <DialogDescription>
+                    Create a new subscription plan for CSC owners.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="my-4">
+                  <PlanForm onSuccess={() => setAddPlanOpen(false)} />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        
+        {/* Dashboard metrics chart */}
+        <div className="mb-8">
+          <DashboardMetrics />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -292,7 +322,7 @@ const Admin = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p>Users management content goes here.</p>
+                <UsersTable />
               </CardContent>
             </Card>
           </TabsContent>
