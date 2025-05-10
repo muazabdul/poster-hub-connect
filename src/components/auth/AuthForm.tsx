@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { FcGoogle } from "react-icons/fc";
 
 type AuthFormProps = {
   type: "login" | "signup";
@@ -26,13 +28,15 @@ const signupSchema = loginSchema.extend({
   phone: z.string().min(10, { message: "Please enter a valid phone number" }),
 });
 
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
+
 const AuthForm = ({ type }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
-  const schema = type === "login" ? loginSchema : signupSchema;
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<LoginFormValues | SignupFormValues>({
+    resolver: zodResolver(type === "login" ? loginSchema : signupSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -46,28 +50,60 @@ const AuthForm = ({ type }: AuthFormProps) => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const onSubmit = async (values: LoginFormValues | SignupFormValues) => {
     setIsLoading(true);
     
     try {
-      // This would be replaced with actual authentication logic
-      console.log("Form values:", values);
-      
-      setTimeout(() => {
-        setIsLoading(false);
+      if (type === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        });
         
-        if (type === "login") {
-          toast.success("Successfully logged in!");
-        } else {
-          toast.success("Account created successfully!");
-        }
+        if (error) throw error;
         
+        toast.success("Successfully logged in!");
         navigate("/dashboard");
-      }, 1500);
-    } catch (error) {
-      setIsLoading(false);
-      toast.error("An error occurred. Please try again.");
+      } else {
+        // For signup, we need to cast values to SignupFormValues
+        const signupValues = values as SignupFormValues;
+        
+        const { error } = await supabase.auth.signUp({
+          email: signupValues.email,
+          password: signupValues.password,
+          options: {
+            data: {
+              name: signupValues.name,
+              csc_id: signupValues.cscId,
+              csc_name: signupValues.cscName,
+              address: signupValues.address,
+              phone: signupValues.phone,
+            },
+          },
+        });
+        
+        if (error) throw error;
+        
+        toast.success("Account created successfully! Please check your email to verify your account.");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred. Please try again.");
       console.error("Auth error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign in with Google");
+      console.error("Google sign in error:", error);
     }
   };
 
@@ -188,6 +224,25 @@ const AuthForm = ({ type }: AuthFormProps) => {
               {type === "login" ? "Logging in..." : "Creating account..."}
             </>
           ) : type === "login" ? "Log In" : "Sign Up"}
+        </Button>
+        
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+        
+        <Button 
+          type="button"
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleGoogleSignIn}
+        >
+          <FcGoogle className="h-5 w-5" />
+          <span>{type === "login" ? "Sign in with Google" : "Sign up with Google"}</span>
         </Button>
       </form>
     </Form>
