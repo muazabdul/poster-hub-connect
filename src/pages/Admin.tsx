@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -29,6 +28,7 @@ import AdminPlans from "@/components/admin/AdminPlans";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminGeneralSettings from "@/components/admin/AdminGeneralSettings";
 import AdminAppearanceSettings from "@/components/admin/AdminAppearanceSettings";
+import ConnectionStatus from "@/components/admin/ConnectionStatus";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -226,6 +226,7 @@ const Admin = () => {
                 <h1 className="text-2xl font-bold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
                 <p className="text-muted-foreground">Manage your {activeTab} efficiently</p>
               </div>
+              <ConnectionStatus />
             </div>
             
             {activeTab === "dashboard" && <AdminDashboard />}
