@@ -13,6 +13,7 @@ import DashboardMetrics from "@/components/admin/DashboardMetrics";
 import PlanForm from "@/components/admin/PlanForm";
 import CategoriesTable from "@/components/admin/CategoriesTable";
 import PostersTable from "@/components/admin/PostersTable";
+import CategoryForm from "@/components/admin/CategoryForm";
 import { 
   Sidebar,
   SidebarContent,
