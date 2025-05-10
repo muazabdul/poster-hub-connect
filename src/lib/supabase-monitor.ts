@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -19,22 +18,22 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
   if (isCheckingConnection) {
     return lastConnectionStatus;
   }
-  
+
   try {
     isCheckingConnection = true;
-    
+
     // Cancel any previous timeout
     if (connectionCheckTimeoutId) {
       clearTimeout(connectionCheckTimeoutId);
     }
-    
+
     // Create a timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutPromise = new Promise<ConnectionStatus>((_, reject) => {
       connectionCheckTimeoutId = setTimeout(() => {
         reject(new Error('Connection check timed out'));
       }, CONNECTION_CHECK_TIMEOUT);
     });
-    
+
     // Create the check promise - just query any table with limit 1
     const checkPromise = supabase
       .from('categories')
@@ -54,17 +53,18 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
       .catch((error) => {
         console.error('Connection check failed:', error);
         retryCount++;
-        
+
         if (retryCount > MAX_RETRIES && lastConnectionStatus !== 'disconnected') {
           toast.error('Database connection issue detected');
         }
-        
+
         return 'disconnected' as ConnectionStatus;
       });
-    
+
     // Race between the timeout and the check
+    // Using Promise.race correctly with proper error handling
     try {
-      const status = await Promise.race<ConnectionStatus>([checkPromise, timeoutPromise]);
+      const status = await Promise.race([checkPromise, timeoutPromise]);
       lastConnectionStatus = status;
       return status;
     } catch (error) {
@@ -96,7 +96,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
     clearInterval(connectionMonitoringInterval);
     connectionMonitoringInterval = null;
   }
-  
+
   // Perform initial check - use void to properly handle the Promise
   void (async () => {
     try {
@@ -106,7 +106,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
       console.error('Error during initial connection check:', error);
     }
   })();
-  
+
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
     // Use void to properly handle the Promise
@@ -118,7 +118,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
       }
     })();
   }, checkIntervalMs);
-  
+
   // Return cleanup function
   return () => {
     if (connectionMonitoringInterval) {
