@@ -10,10 +10,12 @@ export default function ConnectionStatus() {
   
   useEffect(() => {
     const checkConnection = async () => {
+      setStatus('checking');
       const connectionStatus = await checkSupabaseConnection();
       setStatus(connectionStatus);
     };
     
+    // Check connection immediately
     checkConnection();
     
     // Check connection status every 30 seconds

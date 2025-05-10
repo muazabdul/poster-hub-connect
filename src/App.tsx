@@ -30,8 +30,8 @@ const queryClient = new QueryClient({
 
 const App = () => {
   useEffect(() => {
-    // Setup Supabase connection monitoring
-    const cleanup = setupConnectionMonitoring();
+    // Setup Supabase connection monitoring with a shorter initial check interval
+    const cleanup = setupConnectionMonitoring(30000);
     return () => cleanup();
   }, []);
   
