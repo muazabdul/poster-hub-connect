@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Image, Plus, FolderIcon, User } from "lucide-react";
+import { Users, Image, Plus, FolderIcon, User, CreditCard } from "lucide-react";
 import PosterForm from "@/components/admin/PosterForm";
+import PlansTable from "@/components/admin/PlansTable";
 
 const Admin = () => {
   const [addPosterOpen, setAddPosterOpen] = useState(false);
@@ -38,7 +39,7 @@ const Admin = () => {
           </Dialog>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -90,6 +91,19 @@ const Admin = () => {
               </p>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Plans</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">3</div>
+              <p className="text-xs text-muted-foreground">
+                All plans active
+              </p>
+            </CardContent>
+          </Card>
         </div>
         
         <Tabs defaultValue="posters">
@@ -97,6 +111,10 @@ const Admin = () => {
             <TabsTrigger value="posters" className="flex items-center">
               <Image className="h-4 w-4 mr-2" />
               Posters
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Plans
             </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center">
               <FolderIcon className="h-4 w-4 mr-2" />
@@ -234,6 +252,20 @@ const Admin = () => {
                 <Button variant="outline">Previous</Button>
                 <Button variant="outline">Next</Button>
               </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="plans">
+            <Card>
+              <CardHeader>
+                <CardTitle>Plans Management</CardTitle>
+                <CardDescription>
+                  Create and manage subscription plans for CSC owners.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PlansTable />
+              </CardContent>
             </Card>
           </TabsContent>
           
