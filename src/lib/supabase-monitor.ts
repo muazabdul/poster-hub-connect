@@ -10,6 +10,7 @@ const MAX_RETRIES = 3;
 let lastConnectionStatus: ConnectionStatus = 'checking';
 let connectionCheckTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let isCheckingConnection = false;
+let connectionMonitoringInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Check connection to Supabase and return status
@@ -62,9 +63,16 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
       });
     
     // Race between the timeout and the check
-    const status = await Promise.race([checkPromise, timeoutPromise]);
-    lastConnectionStatus = status;
-    return status;
+    // Using Promise.race correctly with proper error handling
+    try {
+      const status = await Promise.race([checkPromise, timeoutPromise]);
+      lastConnectionStatus = status;
+      return status;
+    } catch (error) {
+      console.error('Connection check race failed:', error);
+      lastConnectionStatus = 'disconnected';
+      return 'disconnected';
+    }
   } catch (error) {
     console.error('Error checking connection:', error);
     lastConnectionStatus = 'disconnected';
@@ -76,6 +84,38 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
       connectionCheckTimeoutId = null;
     }
   }
+};
+
+/**
+ * Setup connection monitoring with periodic checks
+ * @param checkIntervalMs Interval in milliseconds between connection checks
+ * @returns Cleanup function to stop monitoring
+ */
+export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void => {
+  // Clear any existing interval
+  if (connectionMonitoringInterval) {
+    clearInterval(connectionMonitoringInterval);
+  }
+  
+  // Perform initial check
+  checkSupabaseConnection().then(status => {
+    console.info('Initial connection check', status);
+  });
+  
+  // Set up periodic checks
+  connectionMonitoringInterval = setInterval(() => {
+    checkSupabaseConnection().catch(error => {
+      console.error('Connection monitoring error:', error);
+    });
+  }, checkIntervalMs);
+  
+  // Return cleanup function
+  return () => {
+    if (connectionMonitoringInterval) {
+      clearInterval(connectionMonitoringInterval);
+      connectionMonitoringInterval = null;
+    }
+  };
 };
 
 /**

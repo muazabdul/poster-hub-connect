@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { checkSupabaseConnection, type ConnectionStatus as ConnectionStatusType } from "@/lib/supabase-monitor";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wifi, WifiOff, WifiAlert } from "lucide-react";
+import { Wifi, WifiOff, WifiLow } from "lucide-react";
 
 export default function ConnectionStatus() {
   const [status, setStatus] = useState<ConnectionStatusType>('checking');
@@ -67,7 +67,7 @@ export default function ConnectionStatus() {
               </>
             ) : status === 'checking' ? (
               <>
-                <WifiAlert className="h-3.5 w-3.5" />
+                <WifiLow className="h-3.5 w-3.5" />
                 <span className="text-xs">Checking connection...</span>
               </>
             ) : (
