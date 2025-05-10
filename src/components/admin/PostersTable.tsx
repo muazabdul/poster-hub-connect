@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Eye, Download } from "lucide-react";
@@ -134,6 +135,25 @@ const PostersTable = () => {
     }).format(date);
   };
 
+  const handleDownload = (poster: Poster) => {
+    toast.success(`Downloading ${poster.title}`);
+    // Actual implementation would handle download logic
+  };
+
+  const handleCopyServiceUrl = () => {
+    if (selectedPoster?.serviceUrl) {
+      navigator.clipboard.writeText(selectedPoster.serviceUrl);
+      toast.success("Service URL copied to clipboard");
+    }
+  };
+
+  const handleCopyContent = () => {
+    if (selectedPoster) {
+      navigator.clipboard.writeText(selectedPoster.title + "\n" + (selectedPoster.description || ""));
+      toast.success("Poster content copied to clipboard");
+    }
+  };
+
   return (
     <div>      
       {loading ? (
@@ -175,7 +195,14 @@ const PostersTable = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0 mr-3">
-                          <div className="h-10 w-10 rounded-sm bg-gray-200"></div>
+                          <img 
+                            src={poster.image_url} 
+                            alt={poster.title}
+                            className="h-10 w-10 rounded-sm object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -186,7 +213,7 @@ const PostersTable = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {categories[poster.category_id] || 'Unknown'}
+                        {categories[poster.category_id] || 'Uncategorized'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -265,35 +292,90 @@ const PostersTable = () => {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Poster Details</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{selectedPoster?.title}</DialogTitle>
           </DialogHeader>
           {selectedPoster && (
-            <div className="space-y-4">
-              <div className="aspect-[3/4] relative bg-muted rounded-md overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-gray-500">Poster Preview</div>
-                </div>
+            <div className="space-y-6">
+              {/* Poster Display Area */}
+              <div className="border-2 rounded-md overflow-hidden bg-white">
+                <img
+                  src={selectedPoster.image_url}
+                  alt={selectedPoster.title}
+                  className="w-full object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
               </div>
               
-              <div className="space-y-2">
-                <h3 className="font-bold">{selectedPoster.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Category: {categories[selectedPoster.category_id] || 'Unknown'}
-                </p>
-                {selectedPoster.description && (
-                  <p className="text-sm">{selectedPoster.description}</p>
-                )}
-                {selectedPoster.serviceUrl && (
-                  <p className="text-sm">
-                    Service URL: <a href={selectedPoster.serviceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{selectedPoster.serviceUrl}</a>
-                  </p>
-                )}
-              </div>
-              
-              <div className="flex justify-end">
-                <Button variant="outline" className="gap-2">
-                  <Download className="h-4 w-4" /> Download
+              {/* Primary Action Buttons */}
+              <div className="grid grid-cols-2 gap-4">
+                <Button 
+                  className="w-full bg-brand-purple hover:bg-brand-darkPurple"
+                  onClick={() => handleDownload(selectedPoster)}
+                >
+                  <Download className="mr-2 h-4 w-4" /> Download
                 </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full" 
+                  onClick={() => handleEdit(selectedPoster)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                </Button>
+              </div>
+              
+              {/* Service URL Display with Copy Button */}
+              {selectedPoster.serviceUrl && (
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Service URL:</label>
+                  <div className="flex items-center gap-2 border rounded-md p-2 bg-gray-50">
+                    <div className="flex-1 truncate text-sm text-muted-foreground">
+                      {selectedPoster.serviceUrl}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleCopyServiceUrl}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Marketing Message Area */}
+              {selectedPoster.description && (
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Marketing Message:</label>
+                  <div className="border rounded-md p-3 bg-gray-50">
+                    <p className="text-sm text-gray-600">{selectedPoster.description}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex ml-auto" 
+                    onClick={handleCopyContent}
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy Content
+                  </Button>
+                </div>
+              )}
+              
+              {/* Metadata */}
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Category:</span>
+                  <span>{categories[selectedPoster.category_id] || 'Uncategorized'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Added On:</span>
+                  <span>{formatDate(selectedPoster.created_at)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Downloads:</span>
+                  <span>{selectedPoster.downloads || 0}</span>
+                </div>
               </div>
             </div>
           )}

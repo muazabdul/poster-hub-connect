@@ -128,12 +128,12 @@ const PosterCard = ({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
             {/* Poster Display Area */}
-            <div className="border-2 rounded-md overflow-hidden">
+            <div className="border-2 rounded-md overflow-hidden bg-white">
               <img
                 src={imageUrl}
                 alt={title}
@@ -141,59 +141,62 @@ const PosterCard = ({
               />
             </div>
             
-            {/* Download and Share Buttons */}
-            <div className="flex gap-4">
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-2 gap-4">
               <Button 
-                className="flex-1 bg-brand-purple hover:bg-brand-darkPurple"
+                className="w-full bg-brand-purple hover:bg-brand-darkPurple"
                 onClick={handleDownload}
               >
-                <Download className="mr-2 h-4 w-4" /> Download Poster
+                <Download className="mr-2 h-4 w-4" /> Download
               </Button>
               <Button 
                 variant="outline"
-                className="flex-1" 
+                className="w-full" 
                 onClick={handleShare}
               >
-                <Share2 className="mr-2 h-4 w-4" /> Share Poster
+                <Share2 className="mr-2 h-4 w-4" /> Share
               </Button>
             </div>
             
             {/* Service URL Display with Copy Button */}
             {serviceUrl && (
-              <div className="flex items-center gap-2 border rounded-md p-2">
-                <div className="flex-1 truncate text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground mr-2">Service URL:</span>
-                  {serviceUrl}
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700">Service URL:</label>
+                <div className="flex items-center gap-2 border rounded-md p-2 bg-gray-50">
+                  <div className="flex-1 truncate text-sm text-muted-foreground">
+                    {serviceUrl}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCopyUrl}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Marketing Message Area */}
+            {description && (
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700">Marketing Message:</label>
+                <div className="border rounded-md p-3 bg-gray-50">
+                  <p className="text-sm text-gray-600">{description}</p>
                 </div>
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  onClick={handleCopyUrl}
+                  size="sm"
+                  className="flex ml-auto" 
+                  onClick={handleCopyContent}
                 >
-                  <Copy className="h-4 w-4" /> Copy URL
+                  <Copy className="mr-2 h-4 w-4" /> Copy Content
                 </Button>
               </div>
             )}
             
-            {/* Content Copy Button */}
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleCopyContent}
-            >
-              <Copy className="mr-2 h-4 w-4" /> Copy Content
-            </Button>
-            
-            {/* Marketing Message Area */}
-            {description && (
-              <div className="border rounded-md p-4">
-                <h4 className="text-sm font-medium mb-2">Marketing Message</h4>
-                <p className="text-sm text-muted-foreground">{description}</p>
-              </div>
-            )}
-            
-            {/* Additional Metadata */}
-            <div className="flex items-center justify-between text-sm">
+            {/* Metadata */}
+            <div className="pt-4 border-t flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Category:</span>
               <Badge variant="outline">{category}</Badge>
             </div>
