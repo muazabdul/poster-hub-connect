@@ -53,9 +53,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (user?.user_metadata?.role === 'admin') {
         console.log("Admin role found in user metadata");
         setIsAdmin(true);
-        // Still try to fetch full profile, but we already know it's an admin
       }
 
+      // Fetch profile using direct query without triggering RLS recursion
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -69,6 +69,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       console.log("Fetched profile data:", data);
       setProfile(data);
+      
+      // Check role from both profile and metadata
       setIsAdmin(data?.role === 'admin' || user?.user_metadata?.role === 'admin');
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener FIRST (to avoid race conditions)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Auth state change:", event, newSession?.user?.id);
@@ -92,6 +94,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             setIsAdmin(true);
           }
           
+          // Use setTimeout to prevent recursion issues
           setTimeout(() => {
             fetchUserProfile(newSession.user.id);
           }, 0);
@@ -118,7 +121,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setIsAdmin(true);
         }
         
-        fetchUserProfile(currentSession.user.id);
+        // Fetch profile with setTimeout to prevent recursion
+        setTimeout(() => {
+          fetchUserProfile(currentSession.user.id);
+        }, 0);
       } else {
         setIsLoading(false);
       }
