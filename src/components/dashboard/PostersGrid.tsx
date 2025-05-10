@@ -1,12 +1,12 @@
 
-import React from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, Eye } from "lucide-react";
+import { Download, Copy, Link as LinkIcon, Share2, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface Poster {
   id: string;
@@ -33,19 +33,36 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
   
   const handleDownload = (poster: Poster, e: React.MouseEvent) => {
     e.stopPropagation();
-    // In a complete implementation, this would track the download
-    // and perhaps increment a counter in the database
     
-    // For now, just simulate a download
     toast.success(`Downloading ${poster.title}`);
     
-    // Create an anchor element and trigger download
     const link = document.createElement('a');
     link.href = poster.image_url;
     link.download = poster.title.replace(/\s+/g, '_').toLowerCase() + '.jpg';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleCopyContent = () => {
+    if (selectedPoster) {
+      navigator.clipboard.writeText(selectedPoster.title + "\n" + (selectedPoster.description || ""));
+      toast.success("Poster content copied to clipboard");
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (selectedPoster?.serviceUrl) {
+      navigator.clipboard.writeText(selectedPoster.serviceUrl);
+      toast.success("Service URL copied to clipboard");
+    }
+  };
+
+  const handleSharePoster = () => {
+    if (selectedPoster) {
+      // This would be replaced with actual share functionality
+      toast.success("Sharing poster");
+    }
   };
   
   if (loading) {
@@ -99,17 +116,6 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
             <CardContent className="p-3 flex-1">
               <h3 className="font-medium line-clamp-2">{poster.title}</h3>
             </CardContent>
-            <CardFooter className="p-2 pt-0 border-t">
-              <Button 
-                variant="ghost"
-                size="sm"
-                className="w-full text-brand-purple hover:text-brand-deepPurple hover:bg-brand-light/50"
-                onClick={(e) => handleDownload(poster, e)}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            </CardFooter>
           </Card>
         ))}
       </div>
@@ -119,34 +125,76 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
           <DialogHeader>
             <DialogTitle>{selectedPoster?.title}</DialogTitle>
           </DialogHeader>
+          
           {selectedPoster && (
-            <div className="space-y-4">
-              <div className="aspect-[3/4] relative bg-muted rounded-md overflow-hidden">
+            <div className="space-y-6">
+              {/* Poster Display Area */}
+              <div className="border-2 rounded-md overflow-hidden">
                 <img
                   src={selectedPoster.image_url}
                   alt={selectedPoster.title}
-                  className="w-full h-full object-contain"
+                  className="w-full object-contain"
                 />
               </div>
               
-              {selectedPoster.description && (
-                <p className="text-sm">{selectedPoster.description}</p>
-              )}
-              
-              {selectedPoster.serviceUrl && (
-                <p className="text-sm">
-                  Service URL: <a href={selectedPoster.serviceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{selectedPoster.serviceUrl}</a>
-                </p>
-              )}
-              
-              <div className="flex justify-end">
+              {/* Download and Share Buttons */}
+              <div className="flex gap-4">
                 <Button 
-                  className="gap-2 bg-brand-purple hover:bg-brand-darkPurple"
+                  className="flex-1 bg-brand-purple hover:bg-brand-darkPurple"
                   onClick={() => handleDownload(selectedPoster, {} as React.MouseEvent)}
                 >
-                  <Download className="h-4 w-4" /> Download
+                  <Download className="mr-2 h-4 w-4" /> Download Poster
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1" 
+                  onClick={handleSharePoster}
+                >
+                  <Share2 className="mr-2 h-4 w-4" /> Share Poster
                 </Button>
               </div>
+              
+              {/* Service URL Display with Copy Button */}
+              {selectedPoster.serviceUrl && (
+                <div className="flex items-center gap-2 border rounded-md p-2">
+                  <div className="flex-1 truncate text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground mr-2">Service URL:</span>
+                    {selectedPoster.serviceUrl}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCopyUrl}
+                  >
+                    <Copy className="h-4 w-4" /> Copy URL
+                  </Button>
+                </div>
+              )}
+              
+              {/* Content Copy Button */}
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={handleCopyContent}
+              >
+                <Copy className="mr-2 h-4 w-4" /> Copy Content
+              </Button>
+              
+              {/* Marketing Message Area */}
+              {selectedPoster.description && (
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-2">Marketing Message</h4>
+                  <p className="text-sm text-muted-foreground">{selectedPoster.description}</p>
+                </div>
+              )}
+              
+              {/* Additional Metadata */}
+              {selectedPoster.category_id && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Category:</span>
+                  <Badge variant="outline">{selectedPoster.category_id}</Badge>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
