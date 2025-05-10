@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 interface Category {
   id: string;
   name: string;
+  thumbnail?: string | null;
 }
 
 interface CategoryFilterProps {
@@ -42,6 +43,15 @@ const CategoryFilter = ({ categories, selectedCategory, onSelectCategory }: Cate
             )}
             onClick={() => onSelectCategory(category.id)}
           >
+            {category.thumbnail && (
+              <div className="w-5 h-5 rounded-full overflow-hidden mr-1">
+                <img 
+                  src={category.thumbnail} 
+                  alt={category.name} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             {category.name}
           </Button>
         ))}

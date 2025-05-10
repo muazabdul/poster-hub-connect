@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { checkSupabaseConnection, type ConnectionStatus } from "@/lib/supabase-monitor";
-import { Wifi, WifiOff } from "lucide-react";
+import { getConnectionStatus, ConnectionStatus, checkSupabaseConnection } from "@/lib/supabase-monitor";
+import { Wifi, WifiOff, WifiLow } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ConnectionIndicator() {
-  const [status, setStatus] = useState<ConnectionStatus>('checking');
+  const [status, setStatus] = useState<ConnectionStatus>(getConnectionStatus());
   
   useEffect(() => {
     const checkConnection = async () => {
@@ -40,7 +40,11 @@ export function ConnectionIndicator() {
                 </>
               ) : (
                 <>
-                  <WifiOff className="h-3 w-3" />
+                  {status === 'checking' ? (
+                    <WifiLow className="h-3 w-3" />
+                  ) : (
+                    <WifiOff className="h-3 w-3" />
+                  )}
                   <span className="text-xs">
                     {status === 'checking' ? 'Checking...' : 'Connection issue'}
                   </span>

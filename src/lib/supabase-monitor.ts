@@ -1,115 +1,152 @@
 
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+export type ConnectionStatus = 'connected' | 'disconnected' | 'checking';
 
-// Status types
-export type ConnectionStatus = 'connected' | 'disconnected' | 'checking' | 'error';
+const CONNECTION_CHECK_TIMEOUT = 5000; // 5 seconds
+let retryCount = 0;
+const MAX_RETRIES = 3;
+let lastConnectionStatus: ConnectionStatus = 'checking';
+let connectionCheckTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let isCheckingConnection = false;
+let connectionMonitoringInterval: ReturnType<typeof setInterval> | null = null;
 
-// Function to check Supabase connection status
-export async function checkSupabaseConnection(): Promise<ConnectionStatus> {
+/**
+ * Check connection to Supabase and return status
+ */
+export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
+  if (isCheckingConnection) {
+    return lastConnectionStatus;
+  }
+
   try {
-    // A simple query to check if we can connect to Supabase
-    const { data, error } = await supabase
+    isCheckingConnection = true;
+
+    // Cancel any previous timeout
+    if (connectionCheckTimeoutId) {
+      clearTimeout(connectionCheckTimeoutId);
+    }
+
+    // Create a timeout promise
+    const timeoutPromise = new Promise<ConnectionStatus>((_, reject) => {
+      connectionCheckTimeoutId = setTimeout(() => {
+        reject(new Error('Connection check timed out'));
+      }, CONNECTION_CHECK_TIMEOUT);
+    });
+
+    // Create the check promise - just query any table with limit 1
+    const checkPromise = supabase
       .from('categories')
       .select('id')
       .limit(1)
-      .maybeSingle();
-      
-    if (error) {
-      console.error("Supabase connection error:", error.message);
-      return 'error';
-    }
-    
-    return 'connected';
-  } catch (error) {
-    console.error("Supabase connection check failed:", error);
-    return 'disconnected';
-  }
-}
-
-// Setup connection monitoring with exponential backoff
-export function setupConnectionMonitoring(initialInterval = 60000) {
-  let intervalId: number | null = null;
-  let currentInterval = initialInterval;
-  let consecutiveErrors = 0;
-  const maxInterval = 300000; // 5 minutes max
-  
-  // Clear any previous monitoring
-  if (intervalId) {
-    clearInterval(intervalId);
-  }
-  
-  // Initial check
-  void checkSupabaseConnection().then(status => {
-    if (status !== 'connected') {
-      console.log("Initial connection check failed, status:", status);
-      toast.error("Having trouble connecting to server. Some features may not work properly.", {
-        duration: 5000,
-        id: "connection-error",
-      });
-      consecutiveErrors++;
-    } else {
-      console.log("Initial connection check successful");
-      consecutiveErrors = 0;
-    }
-  }).catch(error => {
-    console.error("Initial connection check error:", error);
-    consecutiveErrors++;
-  });
-
-  // Regular interval checks with exponential backoff
-  const runConnectionCheck = async () => {
-    try {
-      const status = await checkSupabaseConnection();
-      
-      if (status === 'error' || status === 'disconnected') {
-        console.log(`Connection check failed, status: ${status}, consecutive errors: ${consecutiveErrors + 1}`);
-        toast.error("Having trouble connecting to server. Some features may not work properly.", {
-          duration: 5000,
-          id: "connection-error",
-        });
-        
-        // Increase backoff with consecutive errors
-        consecutiveErrors++;
-        if (consecutiveErrors > 1) {
-          // Exponential backoff with a maximum
-          currentInterval = Math.min(initialInterval * Math.pow(1.5, consecutiveErrors - 1), maxInterval);
-          console.log(`Adjusting check interval to ${currentInterval}ms`);
-          
-          // Reset the interval
-          if (intervalId) {
-            clearInterval(intervalId);
-            intervalId = window.setInterval(runConnectionCheck, currentInterval);
+      .then(() => {
+        // Connection successful
+        if (lastConnectionStatus !== 'connected') {
+          if (lastConnectionStatus === 'disconnected') {
+            toast.success('Database connection restored');
           }
         }
-      } else if (status === 'connected') {
-        // Reset on successful connection
-        console.log("Connection check successful, resetting");
-        consecutiveErrors = 0;
-        
-        // Reset interval to initial value if it was changed
-        if (currentInterval !== initialInterval && intervalId) {
-          currentInterval = initialInterval;
-          clearInterval(intervalId);
-          intervalId = window.setInterval(runConnectionCheck, currentInterval);
-          console.log(`Resetting check interval to ${initialInterval}ms`);
+        console.info('Connection check successful, resetting');
+        retryCount = 0;
+        return 'connected' as ConnectionStatus;
+      })
+      .catch((error) => {
+        console.error('Connection check failed:', error);
+        retryCount++;
+
+        if (retryCount > MAX_RETRIES && lastConnectionStatus !== 'disconnected') {
+          toast.error('Database connection issue detected');
         }
-        
-        // Clear any previous error toasts
-        toast.dismiss("connection-error");
-      }
+
+        return 'disconnected' as ConnectionStatus;
+      });
+
+    // Race between the timeout and the check
+    // Using Promise.race correctly with proper error handling
+    try {
+      const status = await Promise.race<ConnectionStatus>([checkPromise, timeoutPromise]);
+      lastConnectionStatus = status;
+      return status;
     } catch (error) {
-      console.error("Connection check error:", error);
-      consecutiveErrors++;
+      console.error('Connection check race failed:', error);
+      lastConnectionStatus = 'disconnected';
+      return 'disconnected';
     }
-  };
+  } catch (error) {
+    console.error('Error checking connection:', error);
+    lastConnectionStatus = 'disconnected';
+    return 'disconnected';
+  } finally {
+    isCheckingConnection = false;
+    if (connectionCheckTimeoutId) {
+      clearTimeout(connectionCheckTimeoutId);
+      connectionCheckTimeoutId = null;
+    }
+  }
+};
 
-  intervalId = window.setInterval(runConnectionCheck, currentInterval);
+/**
+ * Setup connection monitoring with periodic checks
+ * @param checkIntervalMs Interval in milliseconds between connection checks
+ * @returns Cleanup function to stop monitoring
+ */
+export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void => {
+  // Clear any existing interval
+  if (connectionMonitoringInterval) {
+    clearInterval(connectionMonitoringInterval);
+    connectionMonitoringInterval = null;
+  }
 
+  // Perform initial check - use void to properly handle the Promise
+  void (async () => {
+    try {
+      await checkSupabaseConnection();
+      console.info('Initial connection check', lastConnectionStatus);
+    } catch (error) {
+      console.error('Error during initial connection check:', error);
+    }
+  })();
+
+  // Set up periodic checks
+  connectionMonitoringInterval = setInterval(() => {
+    // Use void to properly handle the Promise
+    void (async () => {
+      try {
+        await checkSupabaseConnection();
+      } catch (error) {
+        console.error('Connection monitoring error:', error);
+      }
+    })();
+  }, checkIntervalMs);
+
+  // Return cleanup function
   return () => {
-    if (intervalId) {
-      clearInterval(intervalId);
+    if (connectionMonitoringInterval) {
+      clearInterval(connectionMonitoringInterval);
+      connectionMonitoringInterval = null;
     }
   };
-}
+};
+
+/**
+ * Reset connection status and retry count
+ */
+export const resetConnectionStatus = (): void => {
+  lastConnectionStatus = 'checking';
+  retryCount = 0;
+};
+
+/**
+ * Get the current connection status without checking
+ */
+export const getConnectionStatus = (): ConnectionStatus => {
+  return lastConnectionStatus;
+};
+
+/**
+ * Check if currently connected
+ */
+export const isConnected = (): boolean => {
+  return lastConnectionStatus === 'connected';
+};
