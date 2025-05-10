@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ const Layout = ({
   fullWidth = false
 }: LayoutProps) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isMobile = useIsMobile();
 
   // Check connection to Supabase
   useEffect(() => {
@@ -71,6 +73,7 @@ const Layout = ({
       <main className={cn(
         "flex-1", 
         fullWidth ? "w-full" : "container py-4",
+        isMobile ? "px-4" : "",
         className
       )}>
         {children}

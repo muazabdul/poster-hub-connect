@@ -11,6 +11,7 @@ import { Image, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const categorySchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
@@ -32,6 +33,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.thumbnail || null);
   const isEditing = !!initialData?.id;
   const { isAdmin } = useAuth();
+  const isMobile = useIsMobile();
   
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
@@ -134,7 +136,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-6`}>
           <div className="space-y-6">
             <FormField
               control={form.control}
@@ -176,8 +178,9 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
               <FormLabel>Category Thumbnail</FormLabel>
               <div 
                 className={cn(
-                  "border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center aspect-square bg-muted/30",
-                  imagePreview ? "border-brand-purple" : "border-gray-300 hover:border-gray-400"
+                  "border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center bg-muted/30",
+                  imagePreview ? "border-brand-purple" : "border-gray-300 hover:border-gray-400",
+                  isMobile ? "aspect-video" : "aspect-square"
                 )}
               >
                 {imagePreview ? (
@@ -200,8 +203,8 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
                 ) : (
                   <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
                     <Image className="h-12 w-12 text-gray-400 mb-2" />
-                    <span className="text-sm font-medium">Click to upload thumbnail</span>
-                    <span className="text-xs text-gray-500 mt-1">PNG, JPG, or SVG (max 5MB)</span>
+                    <span className="text-sm font-medium text-center">Click to upload thumbnail</span>
+                    <span className="text-xs text-gray-500 mt-1 text-center">PNG, JPG, or SVG (max 5MB)</span>
                     <Input 
                       type="file" 
                       accept="image/*"
@@ -218,7 +221,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
         <div className="flex justify-end">
           <Button 
             type="submit" 
-            className="bg-brand-purple hover:bg-brand-darkPurple"
+            className="bg-brand-purple hover:bg-brand-darkPurple w-full md:w-auto"
             disabled={isLoading}
           >
             {isLoading ? (
