@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -64,7 +65,7 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
     // Race between the timeout and the check
     // Using Promise.race correctly with proper error handling
     try {
-      const status = await Promise.race([checkPromise, timeoutPromise]);
+      const status = await Promise.race<ConnectionStatus>([checkPromise, timeoutPromise]);
       lastConnectionStatus = status;
       return status;
     } catch (error) {
