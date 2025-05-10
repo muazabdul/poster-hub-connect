@@ -26,6 +26,7 @@ const signupSchema = loginSchema.extend({
   cscName: z.string().min(3, { message: "CSC Name must be at least 3 characters" }),
   address: z.string().min(5, { message: "Address must be at least 5 characters" }),
   phone: z.string().min(10, { message: "Please enter a valid phone number" }),
+  adminCode: z.string().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -33,6 +34,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 const AuthForm = ({ type }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
   const navigate = useNavigate();
   
   const form = useForm<LoginFormValues | SignupFormValues>({
@@ -46,6 +48,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
         cscName: "",
         address: "",
         phone: "",
+        adminCode: "",
       }),
     },
   });
@@ -67,6 +70,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
       } else {
         // For signup, we need to cast values to SignupFormValues
         const signupValues = values as SignupFormValues;
+        const isAdmin = signupValues.adminCode === "admin123"; // Simple admin verification
         
         const { error } = await supabase.auth.signUp({
           email: signupValues.email,
@@ -78,6 +82,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
               csc_name: signupValues.cscName,
               address: signupValues.address,
               phone: signupValues.phone,
+              role: isAdmin ? 'admin' : 'user',
             },
           },
         });
@@ -183,6 +188,35 @@ const AuthForm = ({ type }: AuthFormProps) => {
                 </FormItem>
               )}
             />
+            
+            <div className="flex items-center space-x-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAdminCode(!showAdminCode)}
+                className="text-xs"
+              >
+                {showAdminCode ? "Hide Admin Options" : "Admin Options"}
+              </Button>
+              {showAdminCode && <span className="text-xs text-muted-foreground">Enter admin code if applicable</span>}
+            </div>
+            
+            {showAdminCode && (
+              <FormField
+                control={form.control}
+                name="adminCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Admin Code</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter admin code" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </>
         )}
         

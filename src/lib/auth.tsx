@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return;
       }
 
+      console.log("Fetched profile data:", data);
       setProfile(data);
       setIsAdmin(data?.role === 'admin');
     } catch (error) {
@@ -69,6 +70,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
+        console.log("Auth state change:", event, newSession?.user?.id);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -88,14 +90,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Current session check:", currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
         fetchUserProfile(currentSession.user.id);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -103,22 +106,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-      // Clear local state immediately after logout attempt
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error during logout:", error);
+        throw error;
+      }
+      
+      // Clear local state immediately after successful logout
       setSession(null);
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
+      
       toast.success("Successfully logged out");
       navigate('/', { replace: true });
     } catch (error: any) {
       console.error("Logout error:", error);
-      // Even if there's an error, we should clear the local state
+      // Even if there's an error, clear the local state for safety
       setSession(null);
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
-      toast.success("Logged out");
+      
+      toast.error("Error during logout, but you've been logged out of this browser");
       navigate('/', { replace: true });
     }
   };
