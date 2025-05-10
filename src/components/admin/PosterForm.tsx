@@ -18,7 +18,6 @@ const posterSchema = z.object({
   category: z.string().min(1, { message: "Please select a category" }),
   description: z.string().optional(),
   serviceUrl: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
-  sharingMessage: z.string().optional(),
 });
 
 interface PosterFormProps {
@@ -29,7 +28,6 @@ interface PosterFormProps {
     category: string;
     description?: string;
     serviceUrl?: string;
-    sharingMessage?: string;
   };
 }
 
@@ -37,7 +35,6 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const isEditing = !!initialData?.id;
   
   const form = useForm<z.infer<typeof posterSchema>>({
@@ -47,7 +44,6 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
       category: initialData?.category || "",
       description: initialData?.description || "",
       serviceUrl: initialData?.serviceUrl || "",
-      sharingMessage: initialData?.sharingMessage || "",
     },
   });
 
@@ -68,27 +64,7 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
       }
     };
 
-    // Fetch user profile
-    const fetchUserProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-          if (error) throw error;
-          setUserProfile(data);
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-
     fetchCategories();
-    fetchUserProfile();
   }, []);
 
   const onSubmit = (values: z.infer<typeof posterSchema>) => {
@@ -128,25 +104,6 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
       setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-  };
-
-  const generateSharingMessage = () => {
-    if (!form.getValues("sharingMessage")) return;
-    
-    let message = form.getValues("sharingMessage") || "";
-    
-    // Add user profile information if available
-    if (userProfile) {
-      message += "\n\n";
-      if (userProfile.csc_name) message += `CSC: ${userProfile.csc_name}\n`;
-      if (userProfile.phone) message += `Phone: ${userProfile.phone}\n`;
-      if (userProfile.address) message += `Address: ${userProfile.address}\n`;
-    }
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(message)
-      .then(() => toast.success("Message copied to clipboard!"))
-      .catch(() => toast.error("Failed to copy message. Please try again."));
   };
 
   return (
@@ -213,37 +170,6 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
                   </FormControl>
                   <FormDescription>
                     Link to the website where this service is available.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="sharingMessage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sharing Message</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter a message that users can copy and share on social media..." 
-                      rows={4} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <div className="flex justify-end mt-2">
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={generateSharingMessage}
-                    >
-                      Copy with Contact Info
-                    </Button>
-                  </div>
-                  <FormDescription>
-                    When users copy this message, your CSC name, contact details and social media links will be automatically added.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

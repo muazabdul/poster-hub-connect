@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,14 +54,8 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
   };
 
   const onSubmit = async (values: CategoryFormValues) => {
-    if (!imagePreview && !isEditing) {
-      toast.error("Please upload a thumbnail for the category");
-      return;
-    }
-    
-    if (!isAdmin || !user) {
-      toast.error("You don't have permission to perform this action");
-      console.error("User is not admin or not authenticated:", { isAdmin, userId: user?.id });
+    if (!user?.id) {
+      toast.error("You must be logged in to perform this action");
       return;
     }
     
@@ -72,7 +65,6 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       console.log("Saving category...", isEditing ? "updating" : "creating", {
         values,
         id: initialData?.id,
-        isAdmin,
         userId: user.id
       });
       

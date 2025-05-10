@@ -1,79 +1,59 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Folder } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Category {
   id: string;
   name: string;
   description: string;
-  count: number;
+  thumbnail: string | null;
+  count?: number;
 }
-
-// Mock categories data
-const categoriesData: Category[] = [
-  {
-    id: "govt-schemes",
-    name: "Government Schemes",
-    description: "Posters about various government welfare schemes and programs.",
-    count: 15
-  },
-  {
-    id: "digital-services",
-    name: "Digital Services",
-    description: "Materials promoting digital services available at CSCs.",
-    count: 12
-  },
-  {
-    id: "banking",
-    name: "Banking Services",
-    description: "Promotional content for banking and financial services.",
-    count: 8
-  },
-  {
-    id: "education",
-    name: "Education",
-    description: "Materials related to educational programs and digital literacy.",
-    count: 10
-  },
-  {
-    id: "agriculture",
-    name: "Agriculture",
-    description: "Content focused on agricultural services and farmer programs.",
-    count: 7
-  },
-  {
-    id: "health",
-    name: "Health Services",
-    description: "Health-related schemes and services promotional materials.",
-    count: 9
-  },
-  {
-    id: "insurance",
-    name: "Insurance",
-    description: "Various insurance schemes and programs available at CSCs.",
-    count: 6
-  },
-  {
-    id: "festivals",
-    name: "Festivals & Events",
-    description: "Seasonal and festival-related promotional materials.",
-    count: 14
-  }
-];
 
 const Categories = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+          
+        if (error) throw error;
+        
+        // Get posters count per category (in a real app)
+        // For now, we'll set a mock count
+        const categoriesWithCount = (data || []).map((cat) => ({
+          ...cat,
+          count: Math.floor(Math.random() * 15) + 1 // Mock count between 1-15
+        }));
+        
+        setCategories(categoriesWithCount);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
   const filteredCategories = searchQuery 
-    ? categoriesData.filter(cat => 
+    ? categories.filter(cat => 
         cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        cat.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (cat.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
       )
-    : categoriesData;
+    : categories;
 
   return (
     <Layout>
@@ -84,34 +64,58 @@ const Categories = () => {
             <p className="text-muted-foreground">Browse posters by category to find what you need.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCategories.map((category) => (
-              <Card key={category.id} className="hover:shadow-md transition-shadow overflow-hidden">
-                <Link to={`/dashboard?category=${category.id}`}>
-                  <div className="bg-brand-purple h-2"></div>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center">
-                        <Folder className="h-5 w-5 mr-2 text-brand-purple" />
-                        {category.name}
-                      </CardTitle>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-light text-brand-deepPurple">
-                        {category.count}
-                      </span>
-                    </div>
-                    <CardDescription>{category.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      className="w-full bg-brand-light text-brand-purple hover:bg-brand-light/80 hover:text-brand-deepPurple"
-                      variant="secondary"
-                    >
-                      View Posters
-                    </Button>
-                  </CardContent>
-                </Link>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="h-64 flex items-center justify-center">
+                  <div className="animate-pulse h-8 w-24 bg-muted rounded"></div>
+                </Card>
+              ))
+            ) : filteredCategories.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No categories found.</p>
+              </div>
+            ) : (
+              filteredCategories.map((category) => (
+                <Card key={category.id} className="hover:shadow-md transition-shadow overflow-hidden h-64 flex flex-col">
+                  <Link to={`/dashboard?category=${category.id}`} className="h-full flex flex-col">
+                    <div className="bg-brand-purple h-2"></div>
+                    {category.thumbnail ? (
+                      <div className="relative overflow-hidden h-32">
+                        <img 
+                          src={category.thumbnail} 
+                          alt={category.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/80 text-brand-deepPurple">
+                            {category.count || 0}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-32 bg-muted flex items-center justify-center">
+                        <Folder className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    <CardHeader className="pb-2 pt-3">
+                      <CardTitle className="text-lg">{category.name}</CardTitle>
+                      <CardDescription className="line-clamp-2 text-sm">
+                        {category.description || "No description available."}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0 mt-auto">
+                      <Button 
+                        className="w-full bg-brand-light text-brand-purple hover:bg-brand-light/80 hover:text-brand-deepPurple"
+                        variant="secondary"
+                      >
+                        View Posters
+                      </Button>
+                    </CardContent>
+                  </Link>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>
