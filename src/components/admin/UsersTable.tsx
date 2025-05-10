@@ -43,6 +43,7 @@ interface User {
 export default function UsersTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -56,34 +57,36 @@ export default function UsersTable() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Fetch users from Supabase
+      // Fetch users from Supabase with improved error handling
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, name, role, csc_name, created_at");
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        setError(`Failed to load users: ${profilesError.message}`);
+        toast.error("Failed to load users");
+        throw profilesError;
+      }
       
-      // Fetch user emails from auth.users
-      // Note: In a real app, we would need to use a Supabase function for this
-      // since direct access to auth.users is restricted
-      // This is a simplified version for the prototype
-      const usersWithEmail = await Promise.all(
-        (profilesData || []).map(async (profile) => {
-          // Mock email fetch - in production this would come from a secure endpoint
-          const email = profile.id + "@example.com"; // This is just a placeholder
-          
-          return {
-            ...profile,
-            email
-          };
-        })
-      );
+      // For the prototype, we'll create mock emails from user IDs
+      // In a production app, you would use a secure admin function to get this data
+      const usersWithEmail = (profilesData || []).map((profile) => {
+        // Generate a placeholder email from the ID
+        const email = `${profile.id.slice(0, 8)}@example.com`;
+        
+        return {
+          ...profile,
+          email
+        };
+      });
       
       setUsers(usersWithEmail);
-    } catch (error: any) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to load users");
+    } catch (err: any) {
+      console.error("Error fetching users:", err);
+      setError(err.message || "Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -135,6 +138,10 @@ export default function UsersTable() {
     setSelectedUser(null);
   };
 
+  const handleRetry = () => {
+    fetchUsers();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -151,6 +158,13 @@ export default function UsersTable() {
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin h-8 w-8 border-4 border-brand-purple border-t-transparent rounded-full"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8 border rounded-md">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={handleRetry} variant="outline" size="sm">
+            Retry
+          </Button>
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-8 border rounded-md">

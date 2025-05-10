@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,31 +13,27 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { toast } from "sonner";
 import { User, Download, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   cscId: z.string().min(3, { message: "CSC ID must be at least 3 characters" }),
   cscName: z.string().min(3, { message: "CSC Name must be at least 3 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().min(10, { message: "Please enter a valid phone number" }),
   address: z.string().min(5, { message: "Address must be at least 5 characters" }),
   bio: z.string().optional(),
 });
 
-// Mock data
-const mockUser = {
-  id: "user123",
-  name: "Rajesh Kumar",
-  cscId: "CSC123456",
-  cscName: "Digital Seva Kendra",
-  email: "rajesh@example.com",
-  phone: "9876543210",
-  address: "123, Main Street, Village Nagar, District City, State - 123456",
-  bio: "Providing digital services to rural areas since 2018.",
-  avatarUrl: "",
-};
+interface Download {
+  id: string;
+  title: string;
+  date: string;
+  category: string;
+}
 
-const mockDownloads = [
+// Mock data for download history
+const mockDownloads: Download[] = [
   { id: "1", title: "PM Kisan Scheme", date: "2023-05-10", category: "Government Schemes" },
   { id: "2", title: "Digital Banking Services", date: "2023-05-08", category: "Banking" },
   { id: "3", title: "Aadhaar Card Services", date: "2023-05-05", category: "Digital Services" },
@@ -45,27 +41,95 @@ const mockDownloads = [
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, profile } = useAuth();
+  const [downloads, setDownloads] = useState<Download[]>(mockDownloads);
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: mockUser.name,
-      cscId: mockUser.cscId,
-      cscName: mockUser.cscName,
-      email: mockUser.email,
-      phone: mockUser.phone,
-      address: mockUser.address,
-      bio: mockUser.bio,
+      name: profile?.name || "",
+      cscId: profile?.csc_id || "",
+      cscName: profile?.csc_name || "",
+      phone: profile?.phone || "",
+      address: profile?.address || "",
+      bio: "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof profileSchema>) => {
-    // This would be replaced with an actual API call
-    console.log("Updated profile:", values);
-    setTimeout(() => {
+  // Update form when profile data changes
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        name: profile.name || "",
+        cscId: profile.csc_id || "",
+        cscName: profile.csc_name || "",
+        phone: profile.phone || "",
+        address: profile.address || "",
+        bio: "",
+      });
+    }
+  }, [profile, form]);
+
+  // Fetch real download history (if available)
+  useEffect(() => {
+    const fetchDownloads = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('downloads')
+          .select('id, poster_id, downloaded_at')
+          .eq('user_id', user.id)
+          .order('downloaded_at', { ascending: false })
+          .limit(10);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // For now, we'll continue using mock data
+          // In a real app, you'd fetch poster details based on poster_id
+          console.log("User downloads:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching downloads:", error);
+      }
+    };
+    
+    fetchDownloads();
+  }, [user]);
+
+  const onSubmit = async (values: z.infer<typeof profileSchema>) => {
+    if (!user) {
+      toast.error("You must be logged in to update your profile");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: values.name,
+          csc_id: values.cscId,
+          csc_name: values.cscName,
+          phone: values.phone,
+          address: values.address,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
       toast.success("Profile updated successfully!");
       setIsEditing(false);
-    }, 1000);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(error.message || "Failed to update profile");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -102,14 +166,16 @@ const Profile = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={mockUser.avatarUrl} />
+                      <AvatarImage src="" />
                       <AvatarFallback className="bg-brand-purple text-white text-lg">
-                        {mockUser.name.charAt(0)}
+                        {profile?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      {mockUser.name}
-                      <CardDescription>{mockUser.cscName} (ID: {mockUser.cscId})</CardDescription>
+                      {profile?.name || "User"}
+                      <CardDescription>
+                        {profile?.csc_name ? `${profile.csc_name} (ID: ${profile.csc_id})` : "Complete your profile"}
+                      </CardDescription>
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -124,20 +190,6 @@ const Profile = () => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Full Name</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Email Address</FormLabel>
                                 <FormControl>
                                   <Input {...field} />
                                 </FormControl>
@@ -213,7 +265,7 @@ const Profile = () => {
                             <FormItem>
                               <FormLabel>Bio</FormLabel>
                               <FormControl>
-                                <Textarea rows={3} {...field} />
+                                <Textarea rows={3} {...field} value={field.value || ""} />
                               </FormControl>
                               <FormDescription>
                                 Briefly describe your CSC services.
@@ -234,8 +286,9 @@ const Profile = () => {
                           <Button 
                             type="submit"
                             className="bg-brand-purple hover:bg-brand-darkPurple"
+                            disabled={isSubmitting}
                           >
-                            Save Changes
+                            {isSubmitting ? "Saving..." : "Save Changes"}
                           </Button>
                         </div>
                       </form>
@@ -245,36 +298,33 @@ const Profile = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <h3 className="font-medium text-sm text-gray-500">Email Address</h3>
-                          <p>{mockUser.email}</p>
+                          <p>{user?.email || "Not set"}</p>
                         </div>
                         <div>
                           <h3 className="font-medium text-sm text-gray-500">Phone Number</h3>
-                          <p>{mockUser.phone}</p>
+                          <p>{profile?.phone || "Not set"}</p>
                         </div>
                       </div>
                       
                       <div>
                         <h3 className="font-medium text-sm text-gray-500">Address</h3>
-                        <p>{mockUser.address}</p>
+                        <p>{profile?.address || "Not set"}</p>
                       </div>
                       
-                      <div>
-                        <h3 className="font-medium text-sm text-gray-500">Bio</h3>
-                        <p>{mockUser.bio}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-medium text-sm text-gray-500">Footer Preview</h3>
-                        <div className="mt-2 p-3 border rounded-md bg-gray-50">
-                          <div className="text-center text-sm">
-                            <p className="font-semibold">{mockUser.cscName}</p>
-                            <p>ID: {mockUser.cscId} | {mockUser.name}</p>
-                            <p>{mockUser.address}</p>
-                            <p>Contact: {mockUser.phone}</p>
+                      {profile?.address && profile?.csc_name && (
+                        <div>
+                          <h3 className="font-medium text-sm text-gray-500">Footer Preview</h3>
+                          <div className="mt-2 p-3 border rounded-md bg-gray-50">
+                            <div className="text-center text-sm">
+                              <p className="font-semibold">{profile.csc_name}</p>
+                              <p>ID: {profile.csc_id} | {profile.name}</p>
+                              <p>{profile.address}</p>
+                              <p>Contact: {profile.phone}</p>
+                            </div>
                           </div>
+                          <p className="text-xs text-gray-500 mt-2">This is how your details will appear on downloaded posters.</p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">This is how your details will appear on downloaded posters.</p>
-                      </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -290,24 +340,37 @@ const Profile = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="divide-y">
-                    {mockDownloads.map((item) => (
-                      <div key={item.id} className="py-3 flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-sm text-gray-500">{item.category}</p>
+                  {downloads.length > 0 ? (
+                    <div className="divide-y">
+                      {downloads.map((item) => (
+                        <div key={item.id} className="py-3 flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{item.title}</p>
+                            <p className="text-sm text-gray-500">{item.category}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">
+                              Downloaded on {new Date(item.date).toLocaleDateString()}
+                            </p>
+                            <Button variant="link" size="sm" className="text-brand-purple p-0">
+                              Download Again
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">
-                            Downloaded on {new Date(item.date).toLocaleDateString()}
-                          </p>
-                          <Button variant="link" size="sm" className="text-brand-purple p-0">
-                            Download Again
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <p className="text-muted-foreground">You haven't downloaded any posters yet.</p>
+                      <Button 
+                        variant="link" 
+                        className="text-brand-purple mt-2"
+                        onClick={() => window.location.href = "/dashboard"}
+                      >
+                        Browse Available Posters
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

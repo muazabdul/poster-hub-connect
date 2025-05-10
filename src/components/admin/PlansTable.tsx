@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ export default function PlansTable() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlans();
@@ -59,12 +61,17 @@ export default function PlansTable() {
   async function fetchPlans() {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from("plans")
         .select("*")
         .order("price");
 
       if (error) {
+        console.error("Error fetching plans:", error);
+        setError(`Failed to load plans: ${error.message}`);
+        toast.error("Failed to load plans");
         throw error;
       }
 
@@ -77,7 +84,7 @@ export default function PlansTable() {
       setPlans(formattedPlans);
     } catch (error: any) {
       console.error("Error fetching plans:", error);
-      toast.error("Failed to load plans");
+      setError(`Failed to load plans: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -150,6 +157,10 @@ export default function PlansTable() {
     setEditingPlan(null);
   };
 
+  const handleRetry = () => {
+    fetchPlans();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -166,6 +177,13 @@ export default function PlansTable() {
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin h-8 w-8 border-4 border-brand-purple border-t-transparent rounded-full"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8 border rounded-md">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={handleRetry} variant="outline" size="sm">
+            Retry
+          </Button>
         </div>
       ) : plans.length === 0 ? (
         <div className="text-center py-8 border rounded-md">
