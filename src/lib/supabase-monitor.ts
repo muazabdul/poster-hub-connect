@@ -29,7 +29,7 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
     }
     
     // Create a timeout promise
-    const timeoutPromise = new Promise<ConnectionStatus>((_, reject) => {
+    const timeoutPromise = new Promise<never>((_, reject) => {
       connectionCheckTimeoutId = setTimeout(() => {
         reject(new Error('Connection check timed out'));
       }, CONNECTION_CHECK_TIMEOUT);
@@ -63,9 +63,8 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
       });
     
     // Race between the timeout and the check
-    // Using Promise.race correctly with proper error handling
     try {
-      const status = await Promise.race([checkPromise, timeoutPromise]);
+      const status = await Promise.race<ConnectionStatus>([checkPromise, timeoutPromise]);
       lastConnectionStatus = status;
       return status;
     } catch (error) {
