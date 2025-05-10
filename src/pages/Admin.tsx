@@ -1,12 +1,11 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Image, Plus, FolderIcon, User, CreditCard, LayoutDashboard, ArrowUp, ArrowDown, Settings, Trash2 } from "lucide-react";
+import { Users, Image, Plus, FolderIcon, User, CreditCard, LayoutDashboard, ArrowUp, ArrowDown, Settings } from "lucide-react";
 import PosterForm from "@/components/admin/PosterForm";
 import PlansTable from "@/components/admin/PlansTable";
 import UsersTable from "@/components/admin/UsersTable";
@@ -16,6 +15,10 @@ import CategoriesTable from "@/components/admin/CategoriesTable";
 import PostersTable from "@/components/admin/PostersTable";
 import CategoryForm from "@/components/admin/CategoryForm";
 import ConnectionStatus from "@/components/admin/ConnectionStatus";
+import PaymentGatewaySettings from "@/components/admin/PaymentGatewaySettings";
+import AppearanceSettings from "@/components/admin/AppearanceSettings";
+import { getSettings, updateSettings, Settings as SettingsType, PaymentGatewaySettings as PaymentSettings, AppearanceSettings as AppearanceSettingsType } from "@/utils/settingsUtils";
+import { toast } from "sonner";
 import { 
   Sidebar,
   SidebarContent,
@@ -37,6 +40,40 @@ const Admin = () => {
   const [addPlanOpen, setAddPlanOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [settings, setSettings] = useState<SettingsType>({
+    payment: {
+      provider: "razorpay",
+      apiKey: "",
+      apiSecret: "",
+      testMode: true
+    },
+    appearance: {
+      logo: null,
+      navigationLinks: [
+        { name: "Home", url: "/" },
+        { name: "Dashboard", url: "/dashboard" }
+      ],
+      copyrightText: "© 2023 CSC Portal. All rights reserved.",
+      socialLinks: []
+    }
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const fetchedSettings = await getSettings();
+        setSettings(fetchedSettings);
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const handleViewAllUsers = () => {
     setActiveTab("users");
@@ -44,6 +81,42 @@ const Admin = () => {
 
   const handleViewAllPosters = () => {
     setActiveTab("posters");
+  };
+
+  const handleUpdatePaymentSettings = async (paymentSettings: PaymentSettings) => {
+    try {
+      const updatedSettings = {
+        ...settings,
+        payment: paymentSettings
+      };
+      
+      const success = await updateSettings(updatedSettings);
+      
+      if (success) {
+        setSettings(updatedSettings);
+      }
+    } catch (error) {
+      console.error("Error updating payment settings:", error);
+      toast.error("Failed to save payment settings");
+    }
+  };
+
+  const handleUpdateAppearanceSettings = async (appearanceSettings: AppearanceSettingsType) => {
+    try {
+      const updatedSettings = {
+        ...settings,
+        appearance: appearanceSettings
+      };
+      
+      const success = await updateSettings(updatedSettings);
+      
+      if (success) {
+        setSettings(updatedSettings);
+      }
+    } catch (error) {
+      console.error("Error updating appearance settings:", error);
+      toast.error("Failed to save appearance settings");
+    }
   };
 
   return (
@@ -454,49 +527,19 @@ const Admin = () => {
                   <CardDescription>Manage payment gateway and other general settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Payment Gateway Integration</h3>
-                      <div className="bg-gray-50 p-4 rounded-md border">
-                        <div className="grid gap-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Payment Gateway
-                              </label>
-                              <select className="w-full rounded-md border border-gray-300 p-2">
-                                <option value="razorpay">Razorpay</option>
-                                <option value="stripe">Stripe</option>
-                                <option value="paypal">PayPal</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                API Key
-                              </label>
-                              <input type="text" placeholder="Enter API Key" className="w-full rounded-md border border-gray-300 p-2" />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                API Secret
-                              </label>
-                              <input type="password" placeholder="Enter API Secret" className="w-full rounded-md border border-gray-300 p-2" />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-purple"></div>
-                              <span className="ml-3 text-sm font-medium text-gray-700">Enable Test Mode</span>
-                            </label>
-                          </div>
-                          <Button className="bg-brand-purple hover:bg-brand-darkPurple w-auto">
-                            Save Payment Settings
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {loading ? (
+                    <div className="flex justify-center py-6">Loading settings...</div>
+                  ) : (
+                    <PaymentGatewaySettings 
+                      settings={settings.payment || {
+                        provider: "razorpay",
+                        apiKey: "",
+                        apiSecret: "",
+                        testMode: true
+                      }} 
+                      onSave={handleUpdatePaymentSettings} 
+                    />
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -508,142 +551,19 @@ const Admin = () => {
                   <CardDescription>Manage website appearance and pages</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Page Management</h3>
-                      <div className="overflow-x-auto border rounded-md">
-                        <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Page Name</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Updated</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            <tr>
-                              <td className="px-4 py-3 text-sm">Home</td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">Published</span>
-                              </td>
-                              <td className="px-4 py-3 text-sm">2023-05-10</td>
-                              <td className="px-4 py-3 text-right text-sm">
-                                <Button variant="ghost" size="sm" className="h-8 text-brand-purple">Edit</Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-gray-500" disabled>Delete</Button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 text-sm">Pricing</td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700">Draft</span>
-                              </td>
-                              <td className="px-4 py-3 text-sm">2023-05-08</td>
-                              <td className="px-4 py-3 text-right text-sm">
-                                <Button variant="ghost" size="sm" className="h-8 text-brand-purple">Edit</Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-red-500">Delete</Button>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 text-sm">Contact</td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700">Draft</span>
-                              </td>
-                              <td className="px-4 py-3 text-sm">2023-05-05</td>
-                              <td className="px-4 py-3 text-right text-sm">
-                                <Button variant="ghost" size="sm" className="h-8 text-brand-purple">Edit</Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-red-500">Delete</Button>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <Button className="mt-4 bg-brand-purple hover:bg-brand-darkPurple">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add New Page
-                      </Button>
-                    </div>
-                    
-                    <div className="pt-4 border-t">
-                      <h3 className="text-lg font-medium mb-2">Header & Footer</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gray-50 p-4 rounded-md border">
-                          <h4 className="font-medium mb-3">Header Settings</h4>
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                              <div className="flex items-center">
-                                <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center mr-3">
-                                  <Image className="h-6 w-6 text-gray-500" />
-                                </div>
-                                <Button variant="outline" size="sm">Upload</Button>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Navigation Links
-                              </label>
-                              <div className="space-y-2">
-                                <div className="flex items-center">
-                                  <input type="text" value="Home" className="flex-grow rounded-md border border-gray-300 p-1 mr-2" />
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                                <div className="flex items-center">
-                                  <input type="text" value="Dashboard" className="flex-grow rounded-md border border-gray-300 p-1 mr-2" />
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                                <Button variant="outline" size="sm" className="mt-2">
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add Link
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-4 rounded-md border">
-                          <h4 className="font-medium mb-3">Footer Settings</h4>
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Copyright Text
-                              </label>
-                              <input type="text" value="© 2023 CSC Portal. All rights reserved." className="w-full rounded-md border border-gray-300 p-2" />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Social Media Links
-                              </label>
-                              <div className="space-y-2">
-                                <div className="flex items-center">
-                                  <select className="w-24 rounded-md border border-gray-300 p-1 mr-2">
-                                    <option>Facebook</option>
-                                    <option>Twitter</option>
-                                    <option>Instagram</option>
-                                  </select>
-                                  <input type="text" placeholder="URL" className="flex-grow rounded-md border border-gray-300 p-1 mr-2" />
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                                <Button variant="outline" size="sm" className="mt-2">
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add Social Link
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <Button className="mt-4 bg-brand-purple hover:bg-brand-darkPurple">
-                        Save Appearance Settings
-                      </Button>
-                    </div>
-                  </div>
+                  {loading ? (
+                    <div className="flex justify-center py-6">Loading settings...</div>
+                  ) : (
+                    <AppearanceSettings 
+                      settings={settings.appearance || {
+                        logo: null,
+                        navigationLinks: [],
+                        copyrightText: "",
+                        socialLinks: []
+                      }} 
+                      onSave={handleUpdateAppearanceSettings} 
+                    />
+                  )}
                 </CardContent>
               </Card>
             )}
