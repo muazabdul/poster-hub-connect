@@ -1,9 +1,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { authAPI, AuthResponse } from '@/lib/api';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -17,6 +16,19 @@ interface Profile {
   address: string | null;
   phone: string | null;
   role: string | null;
+}
+
+interface User {
+  id: string;
+  email: string;
+  user_metadata: {
+    role: string;
+  };
+}
+
+interface Session {
+  token: string;
+  user: User;
 }
 
 interface AuthContextType {
@@ -45,104 +57,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchCurrentUser = async () => {
     try {
-      // First, check if the user has admin role directly from user metadata
-      // This is a backup method if RLS causes issues with profile fetch
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.user_metadata?.role === 'admin') {
-        console.log("Admin role found in user metadata");
-        setIsAdmin(true);
-      }
-
-      // Fetch profile using direct query without triggering RLS recursion
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching user profile:", error);
+      if (!localStorage.getItem("auth_token")) {
+        setIsLoading(false);
         return;
       }
-
-      console.log("Fetched profile data:", data);
-      setProfile(data);
       
-      // Check role from both profile and metadata
-      setIsAdmin(data?.role === 'admin' || user?.user_metadata?.role === 'admin');
+      const authResponse = await authAPI.getCurrentUser();
+      
+      if (authResponse.session && authResponse.profile) {
+        setSession(authResponse.session);
+        setUser(authResponse.session.user);
+        setProfile(authResponse.profile);
+        
+        // Set admin status
+        const isAdminRole = authResponse.profile.role === 'admin' || 
+                          authResponse.session.user.user_metadata.role === 'admin';
+        setIsAdmin(isAdminRole);
+      }
     } catch (error) {
-      console.error("Failed to fetch profile:", error);
+      console.error("Failed to fetch current user:", error);
+      // Clear any stored session data
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST (to avoid race conditions)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state change:", event, newSession?.user?.id);
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        // Fetch the user profile in a separate call
-        if (newSession?.user) {
-          // Check for admin in user metadata first (more reliable)
-          const isAdminFromMetadata = newSession.user.user_metadata?.role === 'admin';
-          if (isAdminFromMetadata) {
-            console.log("Setting admin role from metadata");
-            setIsAdmin(true);
-          }
-          
-          // Use setTimeout to prevent recursion issues
-          setTimeout(() => {
-            fetchUserProfile(newSession.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setIsAdmin(false);
-        }
-
-        setIsLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Current session check:", currentSession?.user?.id);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        // Check for admin in user metadata first
-        const isAdminFromMetadata = currentSession.user.user_metadata?.role === 'admin';
-        if (isAdminFromMetadata) {
-          console.log("Setting admin role from metadata");
-          setIsAdmin(true);
-        }
-        
-        // Fetch profile with setTimeout to prevent recursion
-        setTimeout(() => {
-          fetchUserProfile(currentSession.user.id);
-        }, 0);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    fetchCurrentUser();
   }, []);
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      await authAPI.logout();
       
-      if (error) {
-        console.error("Error during logout:", error);
-        throw error;
-      }
-      
-      // Clear local state immediately after successful logout
+      // Clear local state
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -152,7 +106,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       navigate('/', { replace: true });
     } catch (error: any) {
       console.error("Logout error:", error);
-      // Even if there's an error, clear the local state for safety
+      // Still clear the session data even if API call fails
       setSession(null);
       setUser(null);
       setProfile(null);

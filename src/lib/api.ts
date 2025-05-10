@@ -1,0 +1,220 @@
+
+import { toast } from "sonner";
+
+const API_BASE_URL = "/api";
+
+export interface AuthResponse {
+  status: string;
+  session?: {
+    token: string;
+    user: {
+      id: string;
+      email: string;
+      user_metadata: {
+        role: string;
+      }
+    }
+  };
+  profile?: {
+    id: string;
+    name: string | null;
+    csc_id: string | null;
+    csc_name: string | null;
+    address: string | null;
+    phone: string | null;
+    role: string | null;
+  };
+  message?: string;
+  error?: string;
+}
+
+// Helper for making API requests
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  try {
+    // Get token from localStorage
+    const token = localStorage.getItem("auth_token");
+    
+    // Set default headers
+    const headers = {
+      ...(options.headers || {}),
+      "Content-Type": "application/json",
+    };
+    
+    // Add auth token if available
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    // Make the request
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+    
+    // Parse the JSON response
+    const data = await response.json();
+    
+    // Check if the request was successful
+    if (!response.ok) {
+      throw new Error(data.message || "API request failed");
+    }
+    
+    return data as T;
+  } catch (error: any) {
+    console.error(`API error (${endpoint}):`, error);
+    throw error;
+  }
+}
+
+// Authentication APIs
+export const authAPI = {
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+      const data = await apiRequest<AuthResponse>("/auth/login.php", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      
+      // Store token in localStorage
+      if (data.session?.token) {
+        localStorage.setItem("auth_token", data.session.token);
+      }
+      
+      return data;
+    } catch (error: any) {
+      toast.error(error.message || "Login failed");
+      throw error;
+    }
+  },
+  
+  signup: async (userData: { email: string; password: string; name: string; csc_id?: string; csc_name?: string; }): Promise<AuthResponse> => {
+    try {
+      const data = await apiRequest<AuthResponse>("/auth/register.php", {
+        method: "POST",
+        body: JSON.stringify(userData),
+      });
+      
+      // Store token in localStorage
+      if (data.session?.token) {
+        localStorage.setItem("auth_token", data.session.token);
+      }
+      
+      return data;
+    } catch (error: any) {
+      toast.error(error.message || "Signup failed");
+      throw error;
+    }
+  },
+  
+  logout: async (): Promise<void> => {
+    try {
+      await apiRequest<{ message: string }>("/auth/logout.php", {
+        method: "POST",
+      });
+      
+      // Clear token from localStorage
+      localStorage.removeItem("auth_token");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      // Still remove the token even if the API call fails
+      localStorage.removeItem("auth_token");
+      throw error;
+    }
+  },
+  
+  getCurrentUser: async (): Promise<AuthResponse> => {
+    try {
+      return await apiRequest<AuthResponse>("/auth/user.php");
+    } catch (error: any) {
+      // If token is invalid, clear it
+      localStorage.removeItem("auth_token");
+      throw error;
+    }
+  }
+};
+
+// Posters API
+export const postersAPI = {
+  getPosters: async (params: { category?: string, search?: string } = {}): Promise<any> => {
+    let queryParams = new URLSearchParams();
+    
+    if (params.category) {
+      queryParams.append("category", params.category);
+    }
+    
+    if (params.search) {
+      queryParams.append("search", params.search);
+    }
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/posters/list.php${queryString ? `?${queryString}` : ""}`;
+    
+    return apiRequest<any>(endpoint);
+  }
+};
+
+// Categories API
+export const categoriesAPI = {
+  getCategories: async (): Promise<any> => {
+    return apiRequest<any>("/categories/list.php");
+  }
+};
+
+// Settings API
+export const settingsAPI = {
+  getSettings: async (): Promise<any> => {
+    return apiRequest<any>("/settings/get.php");
+  },
+  
+  updateSettings: async (settingsData: any): Promise<any> => {
+    return apiRequest<any>("/settings/update.php", {
+      method: "POST",
+      body: JSON.stringify(settingsData),
+    });
+  }
+};
+
+// Plans API
+export const plansAPI = {
+  getPlans: async (): Promise<any> => {
+    return apiRequest<any>("/plans/list.php");
+  }
+};
+
+// Upload API
+export interface UploadResult {
+  status: string;
+  publicUrl: string;
+  filename: string;
+  bucket: string;
+  folder: string;
+}
+
+export const uploadAPI = {
+  uploadImage: async (file: File, bucket = "uploads", folder = "images"): Promise<UploadResult> => {
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("bucket", bucket);
+      formData.append("folder", folder);
+      
+      const response = await fetch(`${API_BASE_URL}/upload/image.php`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Upload failed");
+      }
+      
+      return await response.json();
+    } catch (error: any) {
+      toast.error(error.message || "Image upload failed");
+      throw error;
+    }
+  }
+};

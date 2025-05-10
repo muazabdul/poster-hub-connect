@@ -1,17 +1,17 @@
-
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Folder } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { categoriesAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 interface Category {
   id: string;
   name: string;
   description: string | null;
-  thumbnail?: string | null; // Make thumbnail optional
+  thumbnail?: string | null; 
   count?: number;
 }
 
@@ -23,23 +23,17 @@ const Categories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('name');
-          
-        if (error) throw error;
+        setLoading(true);
+        const response = await categoriesAPI.getCategories();
         
-        // Get posters count per category (in a real app)
-        // For now, we'll set a mock count
-        const categoriesWithCount = (data || []).map((cat) => ({
-          ...cat,
-          count: Math.floor(Math.random() * 15) + 1, // Mock count between 1-15
-        }));
+        if (response.status !== 'success') {
+          throw new Error(response.message || "Failed to load categories");
+        }
         
-        setCategories(categoriesWithCount);
+        setCategories(response.data || []);
       } catch (error) {
         console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
       } finally {
         setLoading(false);
       }

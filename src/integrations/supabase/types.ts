@@ -248,9 +248,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_latest_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      update_settings: {
+        Args: { settings_data: Json }
+        Returns: undefined
       }
     }
     Enums: {

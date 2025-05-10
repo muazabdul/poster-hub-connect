@@ -1,7 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types";
+import { settingsAPI } from "@/lib/api";
 
 export interface PaymentGatewaySettings {
   provider: "razorpay" | "stripe" | "paypal";
@@ -71,22 +70,15 @@ export async function getSettings(): Promise<Settings> {
   try {
     console.log("Fetching settings...");
     
-    // First, try using direct query instead of the RPC function
-    const { data: queryData, error: queryError } = await supabase
-      .from('settings')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-      
-    if (queryError) {
-      console.error("Error fetching settings with direct query:", queryError);
-      return defaultSettings;
+    const response = await settingsAPI.getSettings();
+    
+    if (response.status === 'success' && response.data) {
+      const settings = parseSettingsData(response.data);
+      console.log("Settings fetched:", settings);
+      return settings;
     }
       
-    const settings = parseSettingsData(queryData);
-    console.log("Settings fetched via direct query:", settings);
-    return settings;
+    return defaultSettings;
     
   } catch (error) {
     console.error("Error in getSettings:", error);
@@ -127,30 +119,14 @@ export async function updateSettings(settings: Settings): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
     
-    // Convert our strongly typed Settings to the database JSON format
-    // Use type assertion to any to avoid TypeScript errors when converting to JSON
-    const dbSettings = {
-      id: updatedSettings.id,
-      payment: updatedSettings.payment as unknown as Json,
-      appearance: updatedSettings.appearance as unknown as Json,
-      updated_at: updatedSettings.updated_at
-    };
+    const response = await settingsAPI.updateSettings(updatedSettings);
     
-    // Using direct insert/update instead of RPC
-    const { error } = await supabase
-      .from('settings')
-      .upsert(dbSettings, {
-        onConflict: 'id'
-      });
-
-    if (error) {
-      console.error("Error updating settings:", error);
-      toast.error("Failed to save settings");
-      return false;
+    if (response.status === 'success') {
+      toast.success("Settings saved successfully");
+      return true;
+    } else {
+      throw new Error(response.message || "Failed to save settings");
     }
-
-    toast.success("Settings saved successfully");
-    return true;
   } catch (error) {
     console.error("Error in updateSettings:", error);
     toast.error("Failed to save settings");

@@ -1,4 +1,3 @@
-
 import React from "react";
 import Layout from "@/components/layout/Layout";
 import { 
@@ -13,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { CheckIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { plansAPI } from "@/lib/api";
 
 interface Plan {
   id: string;
@@ -38,21 +37,14 @@ const Pricing = () => {
         setLoading(true);
         setError(null);
         
-        const { data, error } = await supabase
-          .from("plans")
-          .select("*")
-          .eq("active", true)
-          .order("price");
-
-        if (error) {
-          console.error("Error fetching plans:", error);
-          setError(`Failed to load plans: ${error.message}`);
-          toast.error("Failed to load pricing plans");
-          throw error;
+        const response = await plansAPI.getPlans();
+        
+        if (response.status !== 'success') {
+          throw new Error(response.message || "Failed to load plans");
         }
 
-        // Parse features if they're stored as a JSON string
-        const formattedPlans: Plan[] = (data || []).map(plan => ({
+        // Parse features if needed
+        const formattedPlans: Plan[] = (response.data || []).map(plan => ({
           ...plan,
           features: parseFeatures(plan.features)
         }));
@@ -61,6 +53,7 @@ const Pricing = () => {
       } catch (error: any) {
         console.error("Error fetching plans:", error);
         setError(error.message);
+        toast.error("Failed to load pricing plans");
       } finally {
         setLoading(false);
       }

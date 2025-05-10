@@ -1,86 +1,90 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import PosterCard from "@/components/dashboard/PosterCard";
 import CategoryFilter from "@/components/dashboard/CategoryFilter";
 import SearchBar from "@/components/dashboard/SearchBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { categoriesAPI, postersAPI } from "@/lib/api";
+import { toast } from "sonner";
 
-// Mock data
-const categories = [
-  { id: "govt-schemes", name: "Govt Schemes" },
-  { id: "digital-services", name: "Digital Services" },
-  { id: "banking", name: "Banking" },
-  { id: "education", name: "Education" },
-  { id: "agriculture", name: "Agriculture" },
-  { id: "health", name: "Health" },
-  { id: "insurance", name: "Insurance" },
-  { id: "festivals", name: "Festivals & Events" },
-];
+interface Category {
+  id: string;
+  name: string;
+}
 
-const posters = [
-  { 
-    id: "1", 
-    title: "PM Kisan Scheme", 
-    category: "govt-schemes",
-    imageUrl: "/placeholder.svg",
-    isNew: true
-  },
-  { 
-    id: "2", 
-    title: "Digital Banking Services", 
-    category: "banking",
-    imageUrl: "/placeholder.svg",
-  },
-  { 
-    id: "3", 
-    title: "Aadhaar Card Services", 
-    category: "digital-services",
-    imageUrl: "/placeholder.svg",
-  },
-  { 
-    id: "4", 
-    title: "Digital Literacy Program", 
-    category: "education",
-    imageUrl: "/placeholder.svg",
-    isNew: true
-  },
-  { 
-    id: "5", 
-    title: "Crop Insurance Scheme", 
-    category: "agriculture",
-    imageUrl: "/placeholder.svg",
-  },
-  { 
-    id: "6", 
-    title: "PMJAY Health Card", 
-    category: "health",
-    imageUrl: "/placeholder.svg",
-  },
-  { 
-    id: "7", 
-    title: "Life Insurance", 
-    category: "insurance",
-    imageUrl: "/placeholder.svg",
-  },
-  { 
-    id: "8", 
-    title: "Diwali Special Offers", 
-    category: "festivals",
-    imageUrl: "/placeholder.svg",
-    isNew: true
-  },
-];
+interface Poster {
+  id: string;
+  title: string;
+  category_id: string;
+  category_name: string;
+  image_url: string;
+  description?: string;
+  service_url?: string;
+  isNew?: boolean;
+}
 
 const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [posters, setPosters] = useState<Poster[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const filteredPosters = posters.filter(poster => {
-    const matchesCategory = selectedCategory === null || poster.category === selectedCategory;
-    const matchesSearch = poster.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoriesAPI.getCategories();
+        
+        if (response.status !== 'success') {
+          throw new Error(response.message || "Failed to load categories");
+        }
+        
+        setCategories(response.data.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name
+        })));
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+  
+  useEffect(() => {
+    const fetchPosters = async () => {
+      try {
+        setLoading(true);
+        const response = await postersAPI.getPosters({
+          category: selectedCategory || undefined,
+          search: searchQuery || undefined
+        });
+        
+        if (response.status !== 'success') {
+          throw new Error(response.message || "Failed to load posters");
+        }
+        
+        // Mark newest posters (first 3) as "new"
+        const postersWithNew = response.data.map((poster: any, index: number) => ({
+          ...poster,
+          isNew: index < 3
+        }));
+        
+        setPosters(postersWithNew);
+      } catch (error) {
+        console.error("Error fetching posters:", error);
+        toast.error("Failed to load posters");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPosters();
+  }, [selectedCategory, searchQuery]);
+  
+  const filteredPosters = posters;
 
   return (
     <Layout>
@@ -112,15 +116,23 @@ const Dashboard = () => {
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
-              {filteredPosters.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="bg-gray-100 h-64 animate-pulse rounded-md"></div>
+                  ))}
+                </div>
+              ) : filteredPosters.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {filteredPosters.map(poster => (
                     <PosterCard 
                       key={poster.id}
                       id={poster.id}
                       title={poster.title}
-                      category={categories.find(cat => cat.id === poster.category)?.name || poster.category}
-                      imageUrl={poster.imageUrl}
+                      category={poster.category_name || "Uncategorized"}
+                      imageUrl={poster.image_url}
+                      description={poster.description}
+                      serviceUrl={poster.service_url}
                       isNew={poster.isNew}
                     />
                   ))}
@@ -139,8 +151,10 @@ const Dashboard = () => {
                     key={poster.id}
                     id={poster.id}
                     title={poster.title}
-                    category={categories.find(cat => cat.id === poster.category)?.name || poster.category}
-                    imageUrl={poster.imageUrl}
+                    category={poster.category_name || "Uncategorized"}
+                    imageUrl={poster.image_url}
+                    description={poster.description}
+                    serviceUrl={poster.service_url}
                     isNew={poster.isNew}
                   />
                 ))}

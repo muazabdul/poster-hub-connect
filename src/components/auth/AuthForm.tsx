@@ -1,146 +1,146 @@
+
 import { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
+import { z } from "zod";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { FcGoogle } from "react-icons/fc";
+import { toast } from "sonner";
 
-type AuthFormProps = {
-  type: "login" | "signup";
-};
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { authAPI } from "@/lib/api";
 
+// Form schema for login
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+// Extended schema for signup
 const signupSchema = loginSchema.extend({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  cscId: z.string().min(3, { message: "CSC ID must be at least 3 characters" }),
-  cscName: z.string().min(3, { message: "CSC Name must be at least 3 characters" }),
-  address: z.string().min(5, { message: "Address must be at least 5 characters" }),
-  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
-  adminCode: z.string().optional(),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  csc_id: z.string().optional(),
+  csc_name: z.string().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
 
+interface AuthFormProps {
+  type: "login" | "signup";
+}
+
 const AuthForm = ({ type }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdminCode, setShowAdminCode] = useState(false);
   const navigate = useNavigate();
-  
-  const form = useForm<LoginFormValues | SignupFormValues>({
-    resolver: zodResolver(type === "login" ? loginSchema : signupSchema),
+
+  const schema = type === "login" ? loginSchema : signupSchema;
+  const form = useForm<any>({
+    resolver: zodResolver(schema),
     defaultValues: {
       email: "",
       password: "",
-      ...(type === "signup" && {
-        name: "",
-        cscId: "",
-        cscName: "",
-        address: "",
-        phone: "",
-        adminCode: "",
-      }),
+      name: "",
+      csc_id: "",
+      csc_name: "",
     },
   });
 
   const onSubmit = async (values: LoginFormValues | SignupFormValues) => {
     setIsLoading(true);
-    
+
     try {
       if (type === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Successfully logged in!");
-        navigate("/dashboard");
+        const loginValues = values as LoginFormValues;
+        await authAPI.login(loginValues.email, loginValues.password);
+        toast.success("Logged in successfully");
       } else {
-        // For signup, we need to cast values to SignupFormValues
         const signupValues = values as SignupFormValues;
-        const isAdmin = signupValues.adminCode === "admin123"; // Simple admin verification
-        
-        const { error } = await supabase.auth.signUp({
-          email: signupValues.email,
-          password: signupValues.password,
-          options: {
-            data: {
-              name: signupValues.name,
-              csc_id: signupValues.cscId,
-              csc_name: signupValues.cscName,
-              address: signupValues.address,
-              phone: signupValues.phone,
-              role: isAdmin ? 'admin' : 'user',
-            },
-          },
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Account created successfully! Please check your email to verify your account.");
-        
-        if (isAdmin) {
-          toast.success("Admin privileges will be activated after verification");
-        }
+        await authAPI.signup(signupValues);
+        toast.success("Account created successfully");
       }
+
+      // Redirect to dashboard after successful authentication
+      navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "An error occurred. Please try again.");
-      console.error("Auth error:", error);
+      console.error("Authentication error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign in with Google");
-      console.error("Google sign in error:", error);
-    }
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {type === "signup" && (
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Smith" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="name@example.com"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {type === "signup" && (
           <>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="cscId"
+                name="csc_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CSC ID</FormLabel>
+                    <FormLabel>CSC ID (optional)</FormLabel>
                     <FormControl>
                       <Input placeholder="Your CSC ID" {...field} />
                     </FormControl>
@@ -148,13 +148,13 @@ const AuthForm = ({ type }: AuthFormProps) => {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
-                name="cscName"
+                name="csc_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CSC Name</FormLabel>
+                    <FormLabel>CSC Name (optional)</FormLabel>
                     <FormControl>
                       <Input placeholder="Your CSC Name" {...field} />
                     </FormControl>
@@ -163,95 +163,14 @@ const AuthForm = ({ type }: AuthFormProps) => {
                 )}
               />
             </div>
-            
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your CSC Address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex items-center space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowAdminCode(!showAdminCode)}
-                className="text-xs"
-              >
-                {showAdminCode ? "Hide Admin Options" : "Admin Options"}
-              </Button>
-              {showAdminCode && <span className="text-xs text-muted-foreground">Enter admin code if applicable</span>}
-            </div>
-            
-            {showAdminCode && (
-              <FormField
-                control={form.control}
-                name="adminCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Admin Code</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="Enter admin code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
           </>
         )}
-        
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Button type="submit" className="w-full bg-brand-purple hover:bg-brand-darkPurple" disabled={isLoading}>
+
+        <Button
+          type="submit"
+          className="w-full bg-brand-purple hover:bg-brand-darkPurple"
+          disabled={isLoading}
+        >
           {isLoading ? (
             <>
               <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -260,26 +179,9 @@ const AuthForm = ({ type }: AuthFormProps) => {
               </svg>
               {type === "login" ? "Logging in..." : "Creating account..."}
             </>
-          ) : type === "login" ? "Log In" : "Sign Up"}
-        </Button>
-        
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-        
-        <Button 
-          type="button"
-          variant="outline"
-          className="w-full flex items-center justify-center gap-2"
-          onClick={handleGoogleSignIn}
-        >
-          <FcGoogle className="h-5 w-5" />
-          <span>{type === "login" ? "Sign in with Google" : "Sign up with Google"}</span>
+          ) : (
+            <>{type === "login" ? "Log in" : "Create account"}</>
+          )}
         </Button>
       </form>
     </Form>
