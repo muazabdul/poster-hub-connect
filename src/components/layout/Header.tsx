@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogIn, LogOut } from "lucide-react";
+import { Menu, X, User, LogIn, LogOut, Shield } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -11,18 +11,20 @@ interface NavItem {
   title: string;
   href: string;
   restricted?: boolean;
+  adminOnly?: boolean;
 }
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading, signOut, isAdmin } = useAuth();
 
   const navItems: NavItem[] = [
     { title: "Home", href: "/" },
     { title: "Dashboard", href: "/dashboard", restricted: true },
     { title: "Categories", href: "/categories", restricted: true },
+    { title: "Admin", href: "/admin", restricted: true, adminOnly: true },
     { title: "Pricing", href: "/pricing" },
     { title: "Contact", href: "/contact" },
   ];
@@ -36,7 +38,8 @@ const Header = () => {
   };
 
   const filteredNavItems = navItems.filter(item => 
-    !item.restricted || (item.restricted && user)
+    (!item.restricted || (item.restricted && user)) && 
+    (!item.adminOnly || (item.adminOnly && isAdmin))
   );
 
   return (
@@ -76,6 +79,15 @@ const Header = () => {
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
               </Button>
+
+              {isAdmin && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin" className="flex items-center gap-1">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                </Button>
+              )}
               
               <Button 
                 variant="outline" 
