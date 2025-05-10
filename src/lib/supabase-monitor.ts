@@ -100,13 +100,21 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
   // Perform initial check
   checkSupabaseConnection().then(status => {
     console.info('Initial connection check', status);
+  }).catch(error => {
+    // Adding proper Promise error handling here
+    console.error('Error during initial connection check:', error);
   });
   
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
-    checkSupabaseConnection().catch(error => {
-      console.error('Connection monitoring error:', error);
-    });
+    // Using an IIFE with async/await instead of .catch()
+    (async () => {
+      try {
+        await checkSupabaseConnection();
+      } catch (error) {
+        console.error('Connection monitoring error:', error);
+      }
+    })();
   }, checkIntervalMs);
   
   // Return cleanup function
