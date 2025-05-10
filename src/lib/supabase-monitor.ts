@@ -97,11 +97,11 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
     clearInterval(connectionMonitoringInterval);
   }
   
-  // Perform initial check - using async/await within an IIFE
-  (async () => {
+  // Perform initial check
+  void (async () => {
     try {
-      const status = await checkSupabaseConnection();
-      console.info('Initial connection check', status);
+      await checkSupabaseConnection();
+      console.info('Initial connection check', lastConnectionStatus);
     } catch (error) {
       console.error('Error during initial connection check:', error);
     }
@@ -109,8 +109,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
   
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
-    // Using an IIFE with async/await for proper error handling
-    (async () => {
+    void (async () => {
       try {
         await checkSupabaseConnection();
       } catch (error) {
