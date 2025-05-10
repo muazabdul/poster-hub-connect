@@ -15,7 +15,6 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          thumbnail: string | null
           updated_at: string | null
         }
         Insert: {
@@ -23,7 +22,6 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          thumbnail?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -31,7 +29,6 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          thumbnail?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -175,30 +172,6 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      settings: {
-        Row: {
-          appearance: Json | null
-          created_at: string
-          id: string
-          payment: Json | null
-          updated_at: string
-        }
-        Insert: {
-          appearance?: Json | null
-          created_at?: string
-          id?: string
-          payment?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          appearance?: Json | null
-          created_at?: string
-          id?: string
-          payment?: Json | null
-          updated_at?: string
         }
         Relationships: []
       }

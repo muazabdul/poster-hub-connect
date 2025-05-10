@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Eye, Download } from "lucide-react";
@@ -31,6 +32,7 @@ interface Poster {
   image_url: string;
   description?: string;
   serviceUrl?: string;
+  sharingMessage?: string;
   created_at: string;
   downloads?: number;
 }
@@ -250,6 +252,7 @@ const PostersTable = () => {
                   category: selectedPoster.category_id,
                   description: selectedPoster.description,
                   serviceUrl: selectedPoster.serviceUrl,
+                  sharingMessage: selectedPoster.sharingMessage,
                 }}
                 onSuccess={() => {
                   setEditDialogOpen(false);

@@ -3,24 +3,16 @@ import { useState, useEffect } from "react";
 import { checkSupabaseConnection, type ConnectionStatus as ConnectionStatusType } from "@/lib/supabase-monitor";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wifi, WifiOff, WifiLow } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 
 export default function ConnectionStatus() {
   const [status, setStatus] = useState<ConnectionStatusType>('checking');
-  const [isChecking, setIsChecking] = useState(false);
   
   useEffect(() => {
     const checkConnection = async () => {
-      setIsChecking(true);
-      try {
-        const connectionStatus = await checkSupabaseConnection();
-        setStatus(connectionStatus);
-      } catch (error) {
-        console.error("Error checking connection:", error);
-        setStatus('disconnected');
-      } finally {
-        setIsChecking(false);
-      }
+      setStatus('checking');
+      const connectionStatus = await checkSupabaseConnection();
+      setStatus(connectionStatus);
     };
     
     // Check connection immediately
@@ -32,58 +24,35 @@ export default function ConnectionStatus() {
     return () => clearInterval(interval);
   }, []);
   
-  const handleManualCheck = () => {
-    if (!isChecking) {
-      const checkConnection = async () => {
-        setIsChecking(true);
-        try {
-          const connectionStatus = await checkSupabaseConnection();
-          setStatus(connectionStatus);
-        } catch (error) {
-          console.error("Error checking connection:", error);
-          setStatus('disconnected');
-        } finally {
-          setIsChecking(false);
-        }
-      };
-      
-      checkConnection();
-    }
-  };
-  
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
             variant={status === 'connected' ? 'outline' : 'destructive'}
-            className={`flex items-center gap-1 cursor-help ${isChecking ? 'animate-pulse' : ''}`}
-            onClick={handleManualCheck}
+            className="flex items-center gap-1 cursor-help"
           >
             {status === 'connected' ? (
               <>
                 <Wifi className="h-3.5 w-3.5" />
                 <span className="text-xs">Connected</span>
               </>
-            ) : status === 'checking' ? (
-              <>
-                <WifiLow className="h-3.5 w-3.5" />
-                <span className="text-xs">Checking connection...</span>
-              </>
             ) : (
               <>
                 <WifiOff className="h-3.5 w-3.5" />
-                <span className="text-xs">Connection issue</span>
+                <span className="text-xs">
+                  {status === 'checking' ? 'Checking connection...' : 'Connection issue'}
+                </span>
               </>
             )}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           {status === 'connected' 
-            ? 'Connected to database - Click to check again' 
+            ? 'Connected to database' 
             : status === 'checking' 
               ? 'Checking database connection...' 
-              : 'Database connection issue - Some features may not work. Click to retry.'}
+              : 'Database connection issue - Some features may not work'}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

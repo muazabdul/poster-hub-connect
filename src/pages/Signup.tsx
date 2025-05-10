@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AuthForm from "@/components/auth/AuthForm";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const Signup = () => {
   return (
@@ -16,6 +18,13 @@ const Signup = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <Alert className="mb-6 bg-brand-light border-brand-purple text-brand-darkPurple">
+              <InfoIcon className="h-4 w-4 mr-2" />
+              <AlertDescription>
+                For admin accounts, click "Admin Options" and use code: <strong>admin123</strong>
+              </AlertDescription>
+            </Alert>
+            
             <AuthForm type="signup" />
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}
