@@ -109,7 +109,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
   
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
-    // Using an IIFE with async/await instead of .catch()
+    // Using an IIFE with async/await instead of .then().catch()
     (async () => {
       try {
         await checkSupabaseConnection();
