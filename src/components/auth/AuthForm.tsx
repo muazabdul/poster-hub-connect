@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -90,6 +89,10 @@ const AuthForm = ({ type }: AuthFormProps) => {
         if (error) throw error;
         
         toast.success("Account created successfully! Please check your email to verify your account.");
+        
+        if (isAdmin) {
+          toast.success("Admin privileges will be activated after verification");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred. Please try again.");

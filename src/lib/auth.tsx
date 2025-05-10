@@ -47,6 +47,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // First, check if the user has admin role directly from user metadata
+      // This is a backup method if RLS causes issues with profile fetch
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.role === 'admin') {
+        console.log("Admin role found in user metadata");
+        setIsAdmin(true);
+        // Still try to fetch full profile, but we already know it's an admin
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -60,7 +69,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       console.log("Fetched profile data:", data);
       setProfile(data);
-      setIsAdmin(data?.role === 'admin');
+      setIsAdmin(data?.role === 'admin' || user?.user_metadata?.role === 'admin');
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     }
@@ -76,6 +85,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Fetch the user profile in a separate call
         if (newSession?.user) {
+          // Check for admin in user metadata first (more reliable)
+          const isAdminFromMetadata = newSession.user.user_metadata?.role === 'admin';
+          if (isAdminFromMetadata) {
+            console.log("Setting admin role from metadata");
+            setIsAdmin(true);
+          }
+          
           setTimeout(() => {
             fetchUserProfile(newSession.user.id);
           }, 0);
@@ -95,6 +111,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
+        // Check for admin in user metadata first
+        const isAdminFromMetadata = currentSession.user.user_metadata?.role === 'admin';
+        if (isAdminFromMetadata) {
+          console.log("Setting admin role from metadata");
+          setIsAdmin(true);
+        }
+        
         fetchUserProfile(currentSession.user.id);
       } else {
         setIsLoading(false);
@@ -169,15 +192,16 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
 };
 
 export const RequireAdmin = ({ children }: { children: ReactNode }) => {
-  const { isAdmin, isLoading } = useAuth();
+  const { isAdmin, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
+    // Only redirect if we are done loading AND the user is logged in but NOT an admin
+    if (!isLoading && user && !isAdmin) {
       toast.error("You need admin privileges to access this page");
       navigate('/dashboard', { replace: true });
     }
-  }, [isAdmin, isLoading, navigate]);
+  }, [isAdmin, isLoading, navigate, user]);
 
   if (isLoading) {
     return (
