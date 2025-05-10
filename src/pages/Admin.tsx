@@ -63,7 +63,10 @@ const Admin = () => {
     const loadSettings = async () => {
       try {
         const fetchedSettings = await getSettings();
-        setSettings(fetchedSettings);
+        console.log("Fetched settings:", fetchedSettings);
+        if (fetchedSettings) {
+          setSettings(fetchedSettings);
+        }
       } catch (error) {
         console.error("Failed to load settings:", error);
         toast.error("Failed to load settings");

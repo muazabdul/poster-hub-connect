@@ -175,6 +175,30 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          appearance: Json | null
+          created_at: string
+          id: string
+          payment: Json | null
+          updated_at: string
+        }
+        Insert: {
+          appearance?: Json | null
+          created_at?: string
+          id?: string
+          payment?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          appearance?: Json | null
+          created_at?: string
+          id?: string
+          payment?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string | null

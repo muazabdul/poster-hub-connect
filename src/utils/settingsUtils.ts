@@ -43,12 +43,10 @@ const defaultSettings: Settings = {
 
 export async function getSettings(): Promise<Settings> {
   try {
+    // Using a raw query instead of the .from("settings") syntax to avoid TypeScript errors
+    // since the settings table was just added and isn't in the types yet
     const { data, error } = await supabase
-      .from("settings")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single();
+      .rpc('get_latest_settings');
 
     if (error) {
       console.error("Error fetching settings:", error);
@@ -69,10 +67,10 @@ export async function updateSettings(settings: Settings): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
     
+    // Using a raw query instead of the .from("settings") syntax
     const { error } = await supabase
-      .from("settings")
-      .upsert(updatedSettings, {
-        onConflict: "id"
+      .rpc('update_settings', { 
+        settings_data: updatedSettings 
       });
 
     if (error) {
