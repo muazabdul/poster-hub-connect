@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -32,7 +31,7 @@ const planSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  price: z.coerce.number().positive("Price must be greater than 0"),
+  price: z.coerce.number().nonnegative("Price must be 0 or greater"), // Changed from positive to nonnegative
   interval: z.enum(["monthly", "yearly"], {
     required_error: "Please select a billing interval",
   }),
