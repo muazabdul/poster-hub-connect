@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { checkSupabaseConnection, type ConnectionStatus } from "@/lib/supabase-monitor";
+import { getConnectionStatus, ConnectionStatus, checkSupabaseConnection } from "@/lib/supabase-monitor";
 import { Wifi, WifiOff, WifiLow } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ConnectionIndicator() {
-  const [status, setStatus] = useState<ConnectionStatus>('checking');
+  const [status, setStatus] = useState<ConnectionStatus>(getConnectionStatus());
   
   useEffect(() => {
     const checkConnection = async () => {
