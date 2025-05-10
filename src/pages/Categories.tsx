@@ -11,7 +11,7 @@ interface Category {
   id: string;
   name: string;
   description: string;
-  thumbnail: string | null;
+  thumbnail?: string | null; // Make thumbnail optional
   count?: number;
 }
 
@@ -34,7 +34,8 @@ const Categories = () => {
         // For now, we'll set a mock count
         const categoriesWithCount = (data || []).map((cat) => ({
           ...cat,
-          count: Math.floor(Math.random() * 15) + 1 // Mock count between 1-15
+          count: Math.floor(Math.random() * 15) + 1, // Mock count between 1-15
+          thumbnail: cat.thumbnail || null, // Ensure thumbnail is included, even if null
         }));
         
         setCategories(categoriesWithCount);
