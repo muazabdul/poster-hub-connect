@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { posterSchema } from "@/schemas/categorySchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,20 +12,14 @@ import { toast } from "sonner";
 import { Image, Upload, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-
-const posterSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  category: z.string().min(1, { message: "Please select a category" }),
-  description: z.string().optional(),
-  serviceUrl: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
-});
+import { z } from "zod";
 
 interface PosterFormProps {
   onSuccess: () => void;
   initialData?: {
     id?: string;
     title: string;
-    category: string;
+    category?: string;
     description?: string;
     serviceUrl?: string;
   };
@@ -130,14 +124,14 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Category (Optional)</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Select a category (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -148,6 +142,9 @@ const PosterForm = ({ onSuccess, initialData }: PosterFormProps) => {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    Organizing posters by category is optional
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
