@@ -83,6 +83,8 @@ const Admin = () => {
       
       if (success) {
         setSettings(updatedSettings);
+        // Force refresh settings context after update
+        window.dispatchEvent(new CustomEvent('settings-updated'));
       }
     } catch (error) {
       console.error("Error updating payment settings:", error);
@@ -102,6 +104,8 @@ const Admin = () => {
       
       if (success) {
         setSettings(updatedSettings);
+        // Force refresh settings context after update
+        window.dispatchEvent(new CustomEvent('settings-updated'));
       }
     } catch (error) {
       console.error("Error updating appearance settings:", error);
@@ -109,7 +113,6 @@ const Admin = () => {
     }
   };
 
-  
   return (
     <Layout className="p-0" fullWidth>
       <SidebarProvider defaultOpen={true}>

@@ -6,55 +6,51 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useSettings } from "@/contexts/SettingsContext";
+import { cn } from "@/lib/utils";
 
 const Header = () => {
   const { user, signOut, isAdmin } = useAuth();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { appearanceSettings, loading } = useSettings();
+  
+  // Use navigation links from appearanceSettings if available
+  const navigationLinks = appearanceSettings?.navigationLinks || [
+    { name: "Home", url: "/" },
+    { name: "Dashboard", url: "/dashboard" },
+    { name: "Categories", url: "/categories" },
+    { name: "Pricing", url: "/pricing" },
+    { name: "Contact", url: "/contact" }
+  ];
 
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/" className="text-xl font-bold">
+          <Link to="/" className="text-xl font-bold flex items-center">
+            {appearanceSettings?.logo && (
+              <img 
+                src={appearanceSettings.logo} 
+                alt="Logo" 
+                className="h-8 mr-2 object-contain"
+              />
+            )}
             Poster Portal
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
-            <Link
-              to="/"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Home
-            </Link>
-            {user && (
-              <>
+            {navigationLinks
+              .filter(link => !user && link.url !== "/dashboard" && link.url !== "/categories" || user)
+              .map((link, index) => (
                 <Link
-                  to="/dashboard"
+                  key={index}
+                  to={link.url}
                   className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
                 >
-                  Dashboard
+                  {link.name}
                 </Link>
-                <Link
-                  to="/categories"
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Categories
-                </Link>
-              </>
-            )}
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/contact"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Contact
-            </Link>
+              ))}
           </nav>
         </div>
         
@@ -106,40 +102,17 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[250px] sm:w-[300px]">
                 <nav className="flex flex-col gap-4 mt-8">
-                  <Link
-                    to="/"
-                    className="text-base font-medium py-2 text-muted-foreground transition-colors hover:text-primary"
-                  >
-                    Home
-                  </Link>
-                  {user && (
-                    <>
+                  {navigationLinks
+                    .filter(link => !user && link.url !== "/dashboard" && link.url !== "/categories" || user)
+                    .map((link, index) => (
                       <Link
-                        to="/dashboard"
+                        key={index}
+                        to={link.url}
                         className="text-base font-medium py-2 text-muted-foreground transition-colors hover:text-primary"
                       >
-                        Dashboard
+                        {link.name}
                       </Link>
-                      <Link
-                        to="/categories"
-                        className="text-base font-medium py-2 text-muted-foreground transition-colors hover:text-primary"
-                      >
-                        Categories
-                      </Link>
-                    </>
-                  )}
-                  <Link
-                    to="/pricing"
-                    className="text-base font-medium py-2 text-muted-foreground transition-colors hover:text-primary"
-                  >
-                    Pricing
-                  </Link>
-                  <Link
-                    to="/contact"
-                    className="text-base font-medium py-2 text-muted-foreground transition-colors hover:text-primary"
-                  >
-                    Contact
-                  </Link>
+                    ))}
                   
                   <div className="border-t pt-4 mt-4">
                     {user ? (
