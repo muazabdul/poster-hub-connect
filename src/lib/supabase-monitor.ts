@@ -98,7 +98,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
     connectionMonitoringInterval = null;
   }
   
-  // Perform initial check
+  // Perform initial check - use void to properly handle the Promise
   void (async () => {
     try {
       await checkSupabaseConnection();
@@ -110,6 +110,7 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
   
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
+    // Use void to properly handle the Promise
     void (async () => {
       try {
         await checkSupabaseConnection();
