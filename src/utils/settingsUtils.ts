@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 export interface PaymentGatewaySettings {
   provider: "razorpay" | "stripe" | "paypal";
@@ -41,6 +42,31 @@ const defaultSettings: Settings = {
   }
 };
 
+// Type guard functions to ensure safe type conversion
+function isPaymentGatewaySettings(value: unknown): value is PaymentGatewaySettings {
+  if (!value || typeof value !== 'object') return false;
+  
+  const payment = value as Partial<PaymentGatewaySettings>;
+  return (
+    typeof payment.provider === 'string' &&
+    typeof payment.apiKey === 'string' &&
+    typeof payment.apiSecret === 'string' &&
+    typeof payment.testMode === 'boolean'
+  );
+}
+
+function isAppearanceSettings(value: unknown): value is AppearanceSettings {
+  if (!value || typeof value !== 'object') return false;
+  
+  const appearance = value as Partial<AppearanceSettings>;
+  return (
+    (appearance.logo === null || typeof appearance.logo === 'string') &&
+    Array.isArray(appearance.navigationLinks) &&
+    typeof appearance.copyrightText === 'string' &&
+    Array.isArray(appearance.socialLinks)
+  );
+}
+
 export async function getSettings(): Promise<Settings> {
   try {
     // Using a PostgreSQL function through a direct query to get the latest settings
@@ -59,12 +85,26 @@ export async function getSettings(): Promise<Settings> {
     // Convert the database JSON to our strongly typed Settings interface
     const settings: Settings = {
       id: data.id,
-      payment: data.payment as PaymentGatewaySettings,
-      appearance: data.appearance as AppearanceSettings,
       updated_at: data.updated_at
     };
 
-    return settings || defaultSettings;
+    // Safely convert payment JSON to our type with fallback
+    if (data.payment && isPaymentGatewaySettings(data.payment)) {
+      settings.payment = data.payment as PaymentGatewaySettings;
+    } else {
+      settings.payment = defaultSettings.payment;
+      console.warn("Invalid payment settings format, using defaults");
+    }
+
+    // Safely convert appearance JSON to our type with fallback
+    if (data.appearance && isAppearanceSettings(data.appearance)) {
+      settings.appearance = data.appearance as AppearanceSettings;
+    } else {
+      settings.appearance = defaultSettings.appearance;
+      console.warn("Invalid appearance settings format, using defaults");
+    }
+
+    return settings;
   } catch (error) {
     console.error("Error in getSettings:", error);
     return defaultSettings;
@@ -79,10 +119,11 @@ export async function updateSettings(settings: Settings): Promise<boolean> {
     };
     
     // Convert our strongly typed Settings to the database JSON format
+    // Use type assertion to any to avoid TypeScript errors when converting to JSON
     const dbSettings = {
       id: updatedSettings.id,
-      payment: updatedSettings.payment as any,
-      appearance: updatedSettings.appearance as any,
+      payment: updatedSettings.payment as unknown as Json,
+      appearance: updatedSettings.appearance as unknown as Json,
       updated_at: updatedSettings.updated_at
     };
     
