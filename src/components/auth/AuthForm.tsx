@@ -64,14 +64,26 @@ const AuthForm = ({ type }: AuthFormProps) => {
         toast.success("Logged in successfully");
       } else {
         const signupValues = values as SignupFormValues;
-        await authAPI.signup(signupValues);
-        toast.success("Account created successfully");
+        // Ensure required fields are present before calling the API
+        if (signupValues.email && signupValues.password && signupValues.name) {
+          await authAPI.signup({
+            email: signupValues.email,
+            password: signupValues.password,
+            name: signupValues.name,
+            csc_id: signupValues.csc_id,
+            csc_name: signupValues.csc_name
+          });
+          toast.success("Account created successfully");
+        } else {
+          throw new Error("Please fill in all required fields");
+        }
       }
 
       // Redirect to dashboard after successful authentication
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Authentication error:", error);
+      toast.error(error.message || "Authentication failed");
     } finally {
       setIsLoading(false);
     }
