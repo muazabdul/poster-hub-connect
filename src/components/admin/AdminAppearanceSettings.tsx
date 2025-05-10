@@ -22,7 +22,10 @@ const AdminAppearanceSettings = ({ loading, settings, onSave }: AdminAppearanceS
     socialLinks: []
   };
   
+  // Ensure we always have valid settings, even during loading
   const appearanceSettings = settings || defaultSettings;
+  
+  console.log("AdminAppearanceSettings render:", { loading, settings: appearanceSettings });
   
   return (
     <Card>

@@ -69,46 +69,72 @@ function isAppearanceSettings(value: unknown): value is AppearanceSettings {
 
 export async function getSettings(): Promise<Settings> {
   try {
-    // Using a PostgreSQL function through a direct query to get the latest settings
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.error("Error fetching settings:", error);
+    console.log("Fetching settings...");
+    
+    // First, try using the get_latest_settings function
+    const { data: functionData, error: functionError } = await supabase
+      .rpc('get_latest_settings');
+      
+    if (functionError) {
+      console.error("Error fetching settings with RPC:", functionError);
+      
+      // If function fails, fall back to direct query
+      const { data: queryData, error: queryError } = await supabase
+        .from('settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (queryError) {
+        console.error("Error fetching settings with direct query:", queryError);
+        return defaultSettings;
+      }
+      
+      const settings = parseSettingsData(queryData);
+      console.log("Settings fetched via direct query:", settings);
+      return settings;
+    }
+    
+    if (!functionData) {
+      console.warn("No settings found, using defaults");
       return defaultSettings;
     }
-
-    // Convert the database JSON to our strongly typed Settings interface
-    const settings: Settings = {
-      id: data.id,
-      updated_at: data.updated_at
-    };
-
-    // Safely convert payment JSON to our type with fallback
-    if (data.payment && isPaymentGatewaySettings(data.payment)) {
-      settings.payment = data.payment as PaymentGatewaySettings;
-    } else {
-      settings.payment = defaultSettings.payment;
-      console.warn("Invalid payment settings format, using defaults");
-    }
-
-    // Safely convert appearance JSON to our type with fallback
-    if (data.appearance && isAppearanceSettings(data.appearance)) {
-      settings.appearance = data.appearance as AppearanceSettings;
-    } else {
-      settings.appearance = defaultSettings.appearance;
-      console.warn("Invalid appearance settings format, using defaults");
-    }
-
+    
+    // Parse function data
+    const settings = parseSettingsData(functionData);
+    console.log("Settings fetched via function:", settings);
     return settings;
   } catch (error) {
     console.error("Error in getSettings:", error);
     return defaultSettings;
   }
+}
+
+// Helper function to parse settings data consistently
+function parseSettingsData(data: any): Settings {
+  const settings: Settings = {
+    id: data.id,
+    updated_at: data.updated_at
+  };
+
+  // Safely convert payment JSON to our type with fallback
+  if (data.payment && isPaymentGatewaySettings(data.payment)) {
+    settings.payment = data.payment as PaymentGatewaySettings;
+  } else {
+    settings.payment = defaultSettings.payment;
+    console.warn("Invalid payment settings format, using defaults");
+  }
+
+  // Safely convert appearance JSON to our type with fallback
+  if (data.appearance && isAppearanceSettings(data.appearance)) {
+    settings.appearance = data.appearance as AppearanceSettings;
+  } else {
+    settings.appearance = defaultSettings.appearance;
+    console.warn("Invalid appearance settings format, using defaults");
+  }
+
+  return settings;
 }
 
 export async function updateSettings(settings: Settings): Promise<boolean> {

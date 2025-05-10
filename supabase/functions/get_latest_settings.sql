@@ -5,10 +5,15 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT row_to_json(s)::jsonb
-  FROM (
-    SELECT * FROM settings 
-    ORDER BY updated_at DESC 
-    LIMIT 1
-  ) s;
+  SELECT 
+    jsonb_build_object(
+      'id', id,
+      'payment', payment,
+      'appearance', appearance,
+      'updated_at', updated_at,
+      'created_at', created_at
+    )
+  FROM settings 
+  ORDER BY updated_at DESC 
+  LIMIT 1;
 $$;

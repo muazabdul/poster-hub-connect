@@ -1,23 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Image, Plus, FolderIcon, User, CreditCard, LayoutDashboard, ArrowUp, ArrowDown, Settings } from "lucide-react";
-import PosterForm from "@/components/admin/PosterForm";
-import PlansTable from "@/components/admin/PlansTable";
-import UsersTable from "@/components/admin/UsersTable";
-import DashboardMetrics from "@/components/admin/DashboardMetrics";
-import PlanForm from "@/components/admin/PlanForm";
-import CategoriesTable from "@/components/admin/CategoriesTable";
-import PostersTable from "@/components/admin/PostersTable";
-import CategoryForm from "@/components/admin/CategoryForm";
-import ConnectionStatus from "@/components/admin/ConnectionStatus";
-import PaymentGatewaySettings from "@/components/admin/PaymentGatewaySettings";
-import AppearanceSettings from "@/components/admin/AppearanceSettings";
+import { ConnectionStatus } from "@/components/ui/ConnectionIndicator";
+import { Settings, LayoutDashboard, Image, FolderIcon, User, CreditCard, Settings as SettingsIcon } from "lucide-react";
 import { getSettings, updateSettings, Settings as SettingsType, PaymentGatewaySettings as PaymentSettings, AppearanceSettings as AppearanceSettingsType } from "@/utils/settingsUtils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +21,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-// Import new components
+// Import components
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminPosters from "@/components/admin/AdminPosters";
 import AdminCategories from "@/components/admin/AdminCategories";
@@ -69,9 +54,10 @@ const Admin = () => {
 
   useEffect(() => {
     const loadSettings = async () => {
+      setLoading(true);
       try {
         const fetchedSettings = await getSettings();
-        console.log("Fetched settings:", fetchedSettings);
+        console.log("Fetched settings in Admin:", fetchedSettings);
         if (fetchedSettings) {
           setSettings(fetchedSettings);
         }
@@ -106,6 +92,7 @@ const Admin = () => {
 
   const handleUpdateAppearanceSettings = async (appearanceSettings: AppearanceSettingsType) => {
     try {
+      console.log("Updating appearance settings:", appearanceSettings);
       const updatedSettings = {
         ...settings,
         appearance: appearanceSettings
@@ -122,6 +109,7 @@ const Admin = () => {
     }
   };
 
+  
   return (
     <Layout className="p-0" fullWidth>
       <SidebarProvider defaultOpen={true}>
@@ -207,7 +195,7 @@ const Admin = () => {
                         isActive={activeTab === "general"} 
                         onClick={() => setActiveTab("general")}
                       >
-                        <Settings className="mr-2 h-4 w-4" />
+                        <SettingsIcon className="mr-2 h-4 w-4" />
                         <span>General</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -216,7 +204,7 @@ const Admin = () => {
                         isActive={activeTab === "appearance"} 
                         onClick={() => setActiveTab("appearance")}
                       >
-                        <Settings className="mr-2 h-4 w-4" />
+                        <SettingsIcon className="mr-2 h-4 w-4" />
                         <span>Appearance</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -249,14 +237,14 @@ const Admin = () => {
             {activeTab === "general" && (
               <AdminGeneralSettings 
                 loading={loading} 
-                settings={settings.payment} 
+                settings={settings.payment || {}} 
                 onSave={handleUpdatePaymentSettings} 
               />
             )}
             {activeTab === "appearance" && (
               <AdminAppearanceSettings 
                 loading={loading} 
-                settings={settings.appearance} 
+                settings={settings.appearance || {}} 
                 onSave={handleUpdateAppearanceSettings} 
               />
             )}

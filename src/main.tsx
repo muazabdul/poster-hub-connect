@@ -7,4 +7,9 @@ import { setupConnectionMonitoring } from './lib/supabase-monitor.ts'
 // Initialize connection monitoring before rendering the app
 setupConnectionMonitoring(30000);
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Create root and render app
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
+
+const root = createRoot(rootElement);
+root.render(<App />);
