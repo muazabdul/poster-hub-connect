@@ -236,14 +236,14 @@ const Admin = () => {
             {activeTab === "general" && (
               <AdminGeneralSettings 
                 loading={loading} 
-                settings={settings.payment} 
+                settings={settings.payment as PaymentSettings} 
                 onSave={handleUpdatePaymentSettings} 
               />
             )}
             {activeTab === "appearance" && (
               <AdminAppearanceSettings 
                 loading={loading} 
-                settings={settings.appearance} 
+                settings={settings.appearance as AppearanceSettingsType} 
                 onSave={handleUpdateAppearanceSettings} 
               />
             )}

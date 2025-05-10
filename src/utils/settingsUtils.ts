@@ -71,40 +71,23 @@ export async function getSettings(): Promise<Settings> {
   try {
     console.log("Fetching settings...");
     
-    // First, try using the get_latest_settings function
-    const { data: functionData, error: functionError } = await supabase
-      .rpc('get_latest_settings');
+    // First, try using direct query instead of the RPC function
+    const { data: queryData, error: queryError } = await supabase
+      .from('settings')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
       
-    if (functionError) {
-      console.error("Error fetching settings with RPC:", functionError);
-      
-      // If function fails, fall back to direct query
-      const { data: queryData, error: queryError } = await supabase
-        .from('settings')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
-        
-      if (queryError) {
-        console.error("Error fetching settings with direct query:", queryError);
-        return defaultSettings;
-      }
-      
-      const settings = parseSettingsData(queryData);
-      console.log("Settings fetched via direct query:", settings);
-      return settings;
-    }
-    
-    if (!functionData) {
-      console.warn("No settings found, using defaults");
+    if (queryError) {
+      console.error("Error fetching settings with direct query:", queryError);
       return defaultSettings;
     }
-    
-    // Parse function data
-    const settings = parseSettingsData(functionData);
-    console.log("Settings fetched via function:", settings);
+      
+    const settings = parseSettingsData(queryData);
+    console.log("Settings fetched via direct query:", settings);
     return settings;
+    
   } catch (error) {
     console.error("Error in getSettings:", error);
     return defaultSettings;

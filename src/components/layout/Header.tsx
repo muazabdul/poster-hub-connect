@@ -2,7 +2,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { ConnectionIndicator } from "@/components/ui/ConnectionIndicator";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -60,9 +59,6 @@ const Header = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Add the ConnectionIndicator here */}
-          <ConnectionIndicator />
-          
           {/* Desktop buttons */}
           {!isMobile && (
             <>
