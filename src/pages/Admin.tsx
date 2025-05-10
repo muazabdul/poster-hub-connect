@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Image, Plus, Category, User } from "lucide-react";
+import { Users, Image, Plus, FolderIcon, User } from "lucide-react";
 import PosterForm from "@/components/admin/PosterForm";
 
 const Admin = () => {
@@ -99,7 +99,7 @@ const Admin = () => {
               Posters
             </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center">
-              <Category className="h-4 w-4 mr-2" />
+              <FolderIcon className="h-4 w-4 mr-2" />
               Categories
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center">

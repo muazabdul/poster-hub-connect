@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { Download, Share, Category, User } from "lucide-react";
+import { Download, Share, FolderIcon, User } from "lucide-react";
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -33,7 +33,7 @@ const FeaturesSection = () => {
       description: "Share posters directly to WhatsApp and other social media platforms to reach your community.",
     },
     {
-      icon: <Category size={24} />,
+      icon: <FolderIcon size={24} />,
       title: "Organized by Categories",
       description: "Find exactly what you need with our well-organized categories and easy search functionality.",
     },
