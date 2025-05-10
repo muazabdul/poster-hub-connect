@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Share2, Image, Copy } from "lucide-react";
+import { Download, Image, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { 
   Dialog,
@@ -47,7 +47,7 @@ const PosterCard = ({
 
   const handleCopyContent = () => {
     navigator.clipboard.writeText(title + "\n" + (description || ""));
-    toast.success("Poster content copied to clipboard");
+    toast.success("Marketing message copied to clipboard");
   };
 
   const handleCopyUrl = () => {
@@ -55,11 +55,6 @@ const PosterCard = ({
       navigator.clipboard.writeText(serviceUrl);
       toast.success("Service URL copied to clipboard");
     }
-  };
-  
-  const handleShare = () => {
-    toast.success(`Sharing poster...`);
-    // Actual implementation would handle the sharing logic
   };
 
   return (
@@ -119,8 +114,8 @@ const PosterCard = ({
             )}
           </Button>
           
-          <Button variant="outline" size="icon" onClick={() => setDialogOpen(true)}>
-            <Share2 className="h-4 w-4" />
+          <Button variant="outline" size="icon" onClick={handleCopyContent}>
+            <Copy className="h-4 w-4" />
           </Button>
         </CardFooter>
       </Card>
@@ -152,9 +147,9 @@ const PosterCard = ({
               <Button 
                 variant="outline"
                 className="w-full" 
-                onClick={handleShare}
+                onClick={handleCopyContent}
               >
-                <Share2 className="mr-2 h-4 w-4" /> Share
+                <Copy className="mr-2 h-4 w-4" /> Copy Content
               </Button>
             </div>
             

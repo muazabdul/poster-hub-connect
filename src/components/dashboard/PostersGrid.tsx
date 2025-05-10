@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -47,7 +46,7 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
   const handleCopyContent = () => {
     if (selectedPoster) {
       navigator.clipboard.writeText(selectedPoster.title + "\n" + (selectedPoster.description || ""));
-      toast.success("Poster content copied to clipboard");
+      toast.success("Marketing message copied to clipboard");
     }
   };
 
@@ -55,13 +54,6 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
     if (selectedPoster?.serviceUrl) {
       navigator.clipboard.writeText(selectedPoster.serviceUrl);
       toast.success("Service URL copied to clipboard");
-    }
-  };
-
-  const handleSharePoster = () => {
-    if (selectedPoster) {
-      // This would be replaced with actual share functionality
-      toast.success("Sharing poster");
     }
   };
   
@@ -148,9 +140,9 @@ const PostersGrid = ({ posters, loading = false }: PostersGridProps) => {
                 <Button 
                   variant="outline"
                   className="w-full" 
-                  onClick={handleSharePoster}
+                  onClick={handleCopyContent}
                 >
-                  <Share2 className="mr-2 h-4 w-4" /> Share
+                  <Copy className="mr-2 h-4 w-4" /> Copy Content
                 </Button>
               </div>
               

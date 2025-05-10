@@ -150,7 +150,7 @@ const PostersTable = () => {
   const handleCopyContent = () => {
     if (selectedPoster) {
       navigator.clipboard.writeText(selectedPoster.title + "\n" + (selectedPoster.description || ""));
-      toast.success("Poster content copied to clipboard");
+      toast.success("Marketing message copied to clipboard");
     }
   };
 
