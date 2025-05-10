@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { Image, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 
 const categorySchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
@@ -29,6 +31,7 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.thumbnail || null);
   const isEditing = !!initialData?.id;
+  const { isAdmin } = useAuth();
   
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
@@ -44,12 +47,18 @@ const CategoryForm = ({ onSuccess, initialData }: CategoryFormProps) => {
       return;
     }
     
+    if (!isAdmin) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       console.log("Saving category...", isEditing ? "updating" : "creating", {
         values,
-        id: initialData?.id
+        id: initialData?.id,
+        isAdmin
       });
       
       // In a real implementation, this would upload the image to storage
