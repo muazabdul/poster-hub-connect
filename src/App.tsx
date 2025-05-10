@@ -5,8 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, RequireAuth, RequireAdmin } from "@/lib/auth";
-import { useEffect } from "react";
-import { setupConnectionMonitoring } from "@/lib/supabase-monitor";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -29,12 +27,6 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  useEffect(() => {
-    // Setup Supabase connection monitoring with a shorter initial check interval
-    const cleanup = setupConnectionMonitoring(30000);
-    return () => cleanup();
-  }, []);
-  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

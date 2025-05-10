@@ -4,7 +4,6 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
@@ -23,22 +22,8 @@ const Layout = ({
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const isMobile = useIsMobile();
 
-  // Check connection to Supabase
+  // Check online status
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        // Simple health check
-        const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
-        if (error) {
-          console.error("Error connecting to Supabase:", error);
-          toast.error("Having trouble connecting to the server. Some features may not work properly.");
-        }
-      } catch (err) {
-        console.error("Connection error:", err);
-      }
-    };
-
-    // Check online status
     const handleOnlineStatusChange = () => {
       const online = navigator.onLine;
       setIsOnline(online);
@@ -46,16 +31,12 @@ const Layout = ({
         toast.error("You appear to be offline. Changes may not be saved.");
       } else {
         toast.success("Back online. Your changes can now be saved.");
-        checkConnection();
       }
     };
 
     window.addEventListener('online', handleOnlineStatusChange);
     window.addEventListener('offline', handleOnlineStatusChange);
     
-    // Initial check
-    checkConnection();
-
     return () => {
       window.removeEventListener('online', handleOnlineStatusChange);
       window.removeEventListener('offline', handleOnlineStatusChange);

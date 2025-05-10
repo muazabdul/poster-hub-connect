@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { ConnectionStatus } from "@/components/ui/ConnectionIndicator";
 import { Settings, LayoutDashboard, Image, FolderIcon, User, CreditCard, Settings as SettingsIcon } from "lucide-react";
 import { getSettings, updateSettings, Settings as SettingsType, PaymentGatewaySettings as PaymentSettings, AppearanceSettings as AppearanceSettingsType } from "@/utils/settingsUtils";
 import { toast } from "sonner";
@@ -216,7 +216,6 @@ const Admin = () => {
             <SidebarFooter>
               <div className="px-4 py-4 flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">Admin Panel v1.0</span>
-                <ConnectionStatus />
               </div>
             </SidebarFooter>
           </Sidebar>
@@ -237,14 +236,14 @@ const Admin = () => {
             {activeTab === "general" && (
               <AdminGeneralSettings 
                 loading={loading} 
-                settings={settings.payment || {}} 
+                settings={settings.payment} 
                 onSave={handleUpdatePaymentSettings} 
               />
             )}
             {activeTab === "appearance" && (
               <AdminAppearanceSettings 
                 loading={loading} 
-                settings={settings.appearance || {}} 
+                settings={settings.appearance} 
                 onSave={handleUpdateAppearanceSettings} 
               />
             )}
