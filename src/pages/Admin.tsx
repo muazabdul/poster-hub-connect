@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Image, Plus, FolderIcon, User, CreditCard, LayoutDashboard, ArrowUp, ArrowDown, Settings } from "lucide-react";
+import { Users, Image, Plus, FolderIcon, User, CreditCard, LayoutDashboard, ArrowUp, ArrowDown, Settings, Trash2 } from "lucide-react";
 import PosterForm from "@/components/admin/PosterForm";
 import PlansTable from "@/components/admin/PlansTable";
 import UsersTable from "@/components/admin/UsersTable";
