@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -63,9 +62,9 @@ export const checkSupabaseConnection = async (): Promise<ConnectionStatus> => {
       });
 
     // Race between the timeout and the check
-    // Using Promise.race correctly with proper error handling and type annotation
+    // Using Promise.race correctly with proper error handling
     try {
-      const status = await Promise.race<ConnectionStatus>([checkPromise, timeoutPromise]);
+      const status = await Promise.race([checkPromise, timeoutPromise]);
       lastConnectionStatus = status;
       return status;
     } catch (error) {
@@ -98,16 +97,26 @@ export const setupConnectionMonitoring = (checkIntervalMs = 30000): () => void =
     connectionMonitoringInterval = null;
   }
 
-  // Perform initial check
-  void checkSupabaseConnection().catch(error => {
-    console.error('Initial connection check failed:', error);
-  });
+  // Perform initial check - use void to properly handle the Promise
+  void (async () => {
+    try {
+      await checkSupabaseConnection();
+      console.info('Initial connection check', lastConnectionStatus);
+    } catch (error) {
+      console.error('Error during initial connection check:', error);
+    }
+  })();
 
   // Set up periodic checks
   connectionMonitoringInterval = setInterval(() => {
-    void checkSupabaseConnection().catch(error => {
-      console.error('Connection monitoring error:', error);
-    });
+    // Use void to properly handle the Promise
+    void (async () => {
+      try {
+        await checkSupabaseConnection();
+      } catch (error) {
+        console.error('Connection monitoring error:', error);
+      }
+    })();
   }, checkIntervalMs);
 
   // Return cleanup function
