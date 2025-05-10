@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -49,8 +50,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+      // Clear local state immediately after logout attempt
+      setSession(null);
+      setUser(null);
+      toast.success("Successfully logged out");
+      navigate('/', { replace: true });
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      // Even if there's an error, we should clear the local state
+      setSession(null);
+      setUser(null);
+      toast.success("Logged out");
+      navigate('/', { replace: true });
+    }
   };
 
   return (
