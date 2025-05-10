@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,6 +199,7 @@ const AppearanceSettings = ({ settings, onSave }: AppearanceSettingsProps) => {
                           <option value="Facebook">Facebook</option>
                           <option value="Twitter">Twitter</option>
                           <option value="Instagram">Instagram</option>
+                          <option value="LinkedIn">LinkedIn</option>
                         </select>
                         <Input 
                           value={link.url} 

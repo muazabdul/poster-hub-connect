@@ -113,6 +113,17 @@ const Admin = () => {
     }
   };
 
+  // Ensure appearance settings is never undefined
+  const currentAppearanceSettings = settings.appearance || {
+    logo: null,
+    navigationLinks: [
+      { name: "Home", url: "/" },
+      { name: "Dashboard", url: "/dashboard" }
+    ],
+    copyrightText: "© 2023 CSC Portal. All rights reserved.",
+    socialLinks: []
+  };
+
   return (
     <Layout className="p-0" fullWidth>
       <SidebarProvider defaultOpen={true}>
@@ -247,7 +258,7 @@ const Admin = () => {
             {activeTab === "appearance" && (
               <AdminAppearanceSettings 
                 loading={loading} 
-                settings={settings.appearance as AppearanceSettingsType} 
+                settings={currentAppearanceSettings} 
                 onSave={handleUpdateAppearanceSettings} 
               />
             )}
