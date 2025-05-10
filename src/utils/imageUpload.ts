@@ -20,17 +20,26 @@ export const uploadImage = async (
     const fileName = `${uuidv4()}.${fileExt}`;
     const filePath = `${folderPath}/${fileName}`;
 
-    // Create storage bucket if it doesn't exist
-    const { data: bucketData, error: bucketError } = await supabase
+    // First check if bucket exists
+    const { data: buckets, error: getBucketError } = await supabase
       .storage
-      .createBucket(bucketName, {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-      });
+      .listBuckets();
     
-    if (bucketError && bucketError.message !== 'Bucket already exists') {
-      console.error("Error creating bucket:", bucketError);
-      throw bucketError;
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    // Create bucket if it doesn't exist
+    if (!bucketExists) {
+      const { error: createBucketError } = await supabase
+        .storage
+        .createBucket(bucketName, {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+        });
+      
+      if (createBucketError) {
+        console.error("Error creating bucket:", createBucketError);
+        throw createBucketError;
+      }
     }
 
     // Upload the file
