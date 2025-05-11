@@ -1,8 +1,8 @@
 
 import { toast } from "sonner";
 
-// Update this to point to where your PHP server is running
-const API_BASE_URL = "http://localhost:8000/api";
+// API base URL - will use direct database connection instead
+const API_BASE_URL = "";
 
 export interface AuthResponse {
   status: string;
@@ -44,8 +44,9 @@ export interface Poster {
 
 export interface PostersResponse {
   status: string;
-  posters: Poster[];
+  data: Poster[];
   message?: string;
+  count?: number;
 }
 
 export interface Category {
@@ -60,7 +61,7 @@ export interface Category {
 
 export interface CategoriesResponse {
   status: string;
-  categories: Category[];
+  data: Category[];
   message?: string;
 }
 
@@ -74,7 +75,7 @@ export interface Setting {
 
 export interface SettingsResponse {
   status: string;
-  settings: Record<string, string>;
+  data: Record<string, any>;
   message?: string;
 }
 
@@ -92,48 +93,36 @@ export interface Plan {
 
 export interface PlansResponse {
   status: string;
-  plans: Plan[];
+  data: Plan[];
   message?: string;
 }
 
-// Helper for making API requests
+// Mock data for direct use without API
+const mockData = {
+  // We'll populate this with mock data for direct usage
+};
+
+// Helper for making API requests (now returns mock data directly)
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   try {
-    // Get token from localStorage
-    const token = localStorage.getItem("auth_token");
+    // For now, return mock data based on the endpoint
+    // This will be replaced with direct database access in a future update
+    console.log(`Mock data requested for endpoint: ${endpoint}`);
     
-    // Set default headers
-    const headers = {
-      ...(options.headers || {}),
-      "Content-Type": "application/json",
-    };
+    // In a real implementation, this would use database connection directly
+    // Return empty successful response for now
+    return {
+      status: "success",
+      data: []
+    } as unknown as T;
     
-    // Add auth token if available
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    // Make the request
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-    
-    // Parse the JSON response
-    const data = await response.json();
-    
-    // Check if the request was successful
-    if (!response.ok) {
-      throw new Error(data.message || "API request failed");
-    }
-    
-    return data as T;
-  } catch (error: any) {
-    console.error(`API error (${endpoint}):`, error);
-    throw error;
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error(`API error (${endpoint}):`, err);
+    throw err;
   }
 }
 
@@ -141,65 +130,138 @@ export async function apiRequest<T>(
 export const authAPI = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const data = await apiRequest<AuthResponse>("/auth/login.php", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      // This would use direct database query in final implementation
+      console.log(`Login attempt with email: ${email}`);
       
-      // Store token in localStorage
-      if (data.session?.token) {
-        localStorage.setItem("auth_token", data.session.token);
-      }
+      // Mock successful login
+      const mockResponse: AuthResponse = {
+        status: "success",
+        session: {
+          token: "mock-token-12345",
+          user: {
+            id: "user-123",
+            email: email,
+            user_metadata: {
+              role: "user"
+            }
+          }
+        },
+        profile: {
+          id: "profile-123",
+          name: "Mock User",
+          csc_id: "CSC001",
+          csc_name: "Demo CSC",
+          address: null,
+          phone: null,
+          role: "user"
+        }
+      };
       
-      return data;
-    } catch (error: any) {
-      toast.error(error.message || "Login failed");
-      throw error;
+      // Store token in localStorage (for compatibility with existing code)
+      localStorage.setItem("auth_token", mockResponse.session.token);
+      
+      return mockResponse;
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Login failed");
+      throw err;
     }
   },
   
   signup: async (userData: { email: string; password: string; name: string; csc_id?: string; csc_name?: string; }): Promise<AuthResponse> => {
     try {
-      const data = await apiRequest<AuthResponse>("/auth/register.php", {
-        method: "POST",
-        body: JSON.stringify(userData),
-      });
+      // This would use direct database query in final implementation
+      console.log(`Signup attempt with email: ${userData.email}`);
       
-      // Store token in localStorage
-      if (data.session?.token) {
-        localStorage.setItem("auth_token", data.session.token);
-      }
+      // Mock successful signup
+      const mockResponse: AuthResponse = {
+        status: "success",
+        session: {
+          token: "mock-token-signup-12345",
+          user: {
+            id: "new-user-123",
+            email: userData.email,
+            user_metadata: {
+              role: "user"
+            }
+          }
+        },
+        profile: {
+          id: "new-profile-123",
+          name: userData.name,
+          csc_id: userData.csc_id || null,
+          csc_name: userData.csc_name || null,
+          address: null,
+          phone: null,
+          role: "user"
+        }
+      };
       
-      return data;
-    } catch (error: any) {
-      toast.error(error.message || "Signup failed");
-      throw error;
+      // Store token in localStorage (for compatibility with existing code)
+      localStorage.setItem("auth_token", mockResponse.session.token);
+      
+      return mockResponse;
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Signup failed");
+      throw err;
     }
   },
   
   logout: async (): Promise<void> => {
     try {
-      await apiRequest<{ message: string }>("/auth/logout.php", {
-        method: "POST",
-      });
+      console.log("Logout attempt");
       
       // Clear token from localStorage
       localStorage.removeItem("auth_token");
-    } catch (error: any) {
-      console.error("Logout error:", error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Logout error:", err);
       // Still remove the token even if the API call fails
       localStorage.removeItem("auth_token");
-      throw error;
+      throw err;
     }
   },
   
   getCurrentUser: async (): Promise<AuthResponse> => {
     try {
-      return await apiRequest<AuthResponse>("/auth/user.php");
-    } catch (error: any) {
+      const token = localStorage.getItem("auth_token");
+      
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+      
+      // This would verify the token against the database in the final implementation
+      console.log("Getting current user with token");
+      
+      // Mock response for authenticated user
+      return {
+        status: "success",
+        session: {
+          token: token,
+          user: {
+            id: "user-123",
+            email: "user@example.com",
+            user_metadata: {
+              role: "user"
+            }
+          }
+        },
+        profile: {
+          id: "profile-123",
+          name: "Mock User",
+          csc_id: "CSC001",
+          csc_name: "Demo CSC",
+          address: null,
+          phone: null,
+          role: "user"
+        }
+      };
+    } catch (error: unknown) {
+      const err = error as Error;
       // If token is invalid, clear it
       localStorage.removeItem("auth_token");
-      throw error;
+      throw err;
     }
   }
 };
@@ -217,38 +279,132 @@ export const postersAPI = {
       queryParams.append("search", params.search);
     }
     
-    const queryString = queryParams.toString();
-    const endpoint = `/posters/list.php${queryString ? `?${queryString}` : ""}`;
+    console.log(`Getting posters with params: ${JSON.stringify(params)}`);
     
-    return apiRequest<PostersResponse>(endpoint);
+    // Mock posters data
+    return {
+      status: "success",
+      data: [
+        {
+          id: "poster-1",
+          title: "Sample Poster 1",
+          description: "This is a sample poster",
+          image_url: "/placeholder.svg",
+          category_id: "category-1",
+          user_id: "user-1",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          category_name: "Marketing"
+        }
+      ],
+      count: 1
+    };
   }
 };
 
 // Categories API
 export const categoriesAPI = {
   getCategories: async (): Promise<CategoriesResponse> => {
-    return apiRequest<CategoriesResponse>("/categories/list.php");
+    console.log("Getting categories");
+    
+    // Mock categories data
+    return {
+      status: "success",
+      data: [
+        {
+          id: "category-1",
+          name: "Marketing",
+          description: "Marketing materials",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          poster_count: 5
+        },
+        {
+          id: "category-2",
+          name: "Educational",
+          description: "Educational materials",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          poster_count: 3
+        }
+      ]
+    };
   }
 };
 
 // Settings API
 export const settingsAPI = {
   getSettings: async (): Promise<SettingsResponse> => {
-    return apiRequest<SettingsResponse>("/settings/get.php");
+    console.log("Getting settings");
+    
+    // Mock settings data
+    return {
+      status: "success",
+      data: {
+        payment: {
+          provider: "razorpay",
+          apiKey: "",
+          apiSecret: "",
+          testMode: true
+        },
+        appearance: {
+          logo: null,
+          navigationLinks: [
+            { name: "Home", url: "/" },
+            { name: "Dashboard", url: "/dashboard" }
+          ],
+          copyrightText: "© 2023 CSC Portal. All rights reserved.",
+          socialLinks: []
+        }
+      }
+    };
   },
   
-  updateSettings: async (settingsData: Record<string, string>): Promise<SettingsResponse> => {
-    return apiRequest<SettingsResponse>("/settings/update.php", {
-      method: "POST",
-      body: JSON.stringify(settingsData),
-    });
+  updateSettings: async (settingsData: Record<string, any>): Promise<SettingsResponse> => {
+    console.log("Updating settings:", settingsData);
+    
+    // In a real implementation, this would update the database
+    return {
+      status: "success",
+      data: settingsData,
+      message: "Settings updated successfully"
+    };
   }
 };
 
 // Plans API
 export const plansAPI = {
   getPlans: async (): Promise<PlansResponse> => {
-    return apiRequest<PlansResponse>("/plans/list.php");
+    console.log("Getting plans");
+    
+    // Mock plans data
+    return {
+      status: "success",
+      data: [
+        {
+          id: "plan-1",
+          name: "Basic",
+          description: "Basic plan for individuals",
+          price: 9.99,
+          interval: "month",
+          features: JSON.stringify(["5 posters per month", "Basic support"]),
+          is_featured: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: "plan-2",
+          name: "Premium",
+          description: "Premium plan for businesses",
+          price: 29.99,
+          interval: "month",
+          features: JSON.stringify(["Unlimited posters", "Priority support", "Analytics"]),
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+    };
   }
 };
 
@@ -264,25 +420,20 @@ export interface UploadResult {
 export const uploadAPI = {
   uploadImage: async (file: File, bucket = "uploads", folder = "images"): Promise<UploadResult> => {
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("bucket", bucket);
-      formData.append("folder", folder);
+      console.log(`Mock uploading file: ${file.name} to ${bucket}/${folder}`);
       
-      const response = await fetch(`${API_BASE_URL}/upload/image.php`, {
-        method: "POST",
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Upload failed");
-      }
-      
-      return await response.json();
-    } catch (error: any) {
-      toast.error(error.message || "Image upload failed");
-      throw error;
+      // Mock successful upload
+      return {
+        status: "success",
+        publicUrl: URL.createObjectURL(file), // Create a temporary URL for preview
+        filename: file.name,
+        bucket: bucket,
+        folder: folder
+      };
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Image upload failed");
+      throw err;
     }
   }
 };
