@@ -1,7 +1,7 @@
-
 import { toast } from "sonner";
 
-const API_BASE_URL = "/api";
+// Update this to point to where your PHP server is running
+const API_BASE_URL = "http://localhost:8000/api";
 
 export interface AuthResponse {
   status: string;

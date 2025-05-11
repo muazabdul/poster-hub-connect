@@ -1,3 +1,4 @@
+
 <?php
 // Load environment variables if not already loaded
 if (!isset($_ENV['ALLOW_ORIGIN']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/.env')) {
@@ -16,36 +17,13 @@ if (!isset($_ENV['ALLOW_ORIGIN']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/.
     }
 }
 
-// Get allowed origins from environment variable or default to all
-$allow_origin = getenv('ALLOW_ORIGIN') ?: '*';
+// Allow from any origin during development
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-// Allow from specified origin
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    // If ALLOW_ORIGIN is *, allow any origin
-    if ($allow_origin === '*') {
-        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    } 
-    // Otherwise check if the origin is allowed
-    else {
-        $allowed_origins = explode(',', $allow_origin);
-        if (in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
-            header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-        }
-    }
-    
-    header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Max-Age: 86400');    // cache for 1 day
-}
-
-// Access-Control headers are received during OPTIONS requests
+// Handle preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    
-    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
-        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    
-    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-        header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
-
     exit(0);
 }
 ?>
