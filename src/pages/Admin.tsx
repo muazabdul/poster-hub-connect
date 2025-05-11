@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -34,6 +35,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [settings, setSettings] = useState<SettingsType>({
+    updated_at: new Date().toISOString(), // Adding the required property
     payment: {
       provider: "razorpay",
       apiKey: "",

@@ -1,3 +1,4 @@
+
 import React from "react";
 import Layout from "@/components/layout/Layout";
 import { 
@@ -22,7 +23,10 @@ interface Plan {
   price: number;
   interval: string;
   features: string[] | null;
-  active: boolean | null;
+  active?: boolean | null; // Making active optional to match the API response
+  is_featured?: boolean; // Add the is_featured property
+  created_at: string;
+  updated_at: string;
 }
 
 const Pricing = () => {

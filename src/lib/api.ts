@@ -133,7 +133,7 @@ export const authAPI = {
       // This would use direct database query in final implementation
       console.log(`Login attempt with email: ${email}`);
       
-      // Mock successful login
+      // Mock successful login with admin privileges
       const mockResponse: AuthResponse = {
         status: "success",
         session: {
@@ -142,7 +142,7 @@ export const authAPI = {
             id: "user-123",
             email: email,
             user_metadata: {
-              role: "user"
+              role: "admin" // Changed from "user" to "admin"
             }
           }
         },
@@ -153,7 +153,7 @@ export const authAPI = {
           csc_name: "Demo CSC",
           address: null,
           phone: null,
-          role: "user"
+          role: "admin" // Changed from "user" to "admin"
         }
       };
       
@@ -173,7 +173,7 @@ export const authAPI = {
       // This would use direct database query in final implementation
       console.log(`Signup attempt with email: ${userData.email}`);
       
-      // Mock successful signup
+      // Mock successful signup with admin privileges
       const mockResponse: AuthResponse = {
         status: "success",
         session: {
@@ -182,7 +182,7 @@ export const authAPI = {
             id: "new-user-123",
             email: userData.email,
             user_metadata: {
-              role: "user"
+              role: "admin" // Changed from "user" to "admin"
             }
           }
         },
@@ -193,7 +193,7 @@ export const authAPI = {
           csc_name: userData.csc_name || null,
           address: null,
           phone: null,
-          role: "user"
+          role: "admin" // Changed from "user" to "admin"
         }
       };
       
@@ -234,7 +234,7 @@ export const authAPI = {
       // This would verify the token against the database in the final implementation
       console.log("Getting current user with token");
       
-      // Mock response for authenticated user
+      // Mock response for authenticated user with admin privileges
       return {
         status: "success",
         session: {
@@ -243,7 +243,7 @@ export const authAPI = {
             id: "user-123",
             email: "user@example.com",
             user_metadata: {
-              role: "user"
+              role: "admin" // Changed from "user" to "admin"
             }
           }
         },
@@ -254,7 +254,7 @@ export const authAPI = {
           csc_name: "Demo CSC",
           address: null,
           phone: null,
-          role: "user"
+          role: "admin" // Changed from "user" to "admin"
         }
       };
     } catch (error: unknown) {
