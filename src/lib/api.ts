@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 // Update this to point to where your PHP server is running
@@ -26,6 +27,73 @@ export interface AuthResponse {
   };
   message?: string;
   error?: string;
+}
+
+export interface Poster {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  category_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  category_name?: string;
+  downloads?: number;
+}
+
+export interface PostersResponse {
+  status: string;
+  posters: Poster[];
+  message?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  icon?: string | null;
+  created_at: string;
+  updated_at: string;
+  poster_count?: number;
+}
+
+export interface CategoriesResponse {
+  status: string;
+  categories: Category[];
+  message?: string;
+}
+
+export interface Setting {
+  id: string;
+  key: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SettingsResponse {
+  status: string;
+  settings: Record<string, string>;
+  message?: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  interval: string;
+  features: string | null;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlansResponse {
+  status: string;
+  plans: Plan[];
+  message?: string;
 }
 
 // Helper for making API requests
@@ -138,8 +206,8 @@ export const authAPI = {
 
 // Posters API
 export const postersAPI = {
-  getPosters: async (params: { category?: string, search?: string } = {}): Promise<any> => {
-    let queryParams = new URLSearchParams();
+  getPosters: async (params: { category?: string, search?: string } = {}): Promise<PostersResponse> => {
+    const queryParams = new URLSearchParams();
     
     if (params.category) {
       queryParams.append("category", params.category);
@@ -152,25 +220,25 @@ export const postersAPI = {
     const queryString = queryParams.toString();
     const endpoint = `/posters/list.php${queryString ? `?${queryString}` : ""}`;
     
-    return apiRequest<any>(endpoint);
+    return apiRequest<PostersResponse>(endpoint);
   }
 };
 
 // Categories API
 export const categoriesAPI = {
-  getCategories: async (): Promise<any> => {
-    return apiRequest<any>("/categories/list.php");
+  getCategories: async (): Promise<CategoriesResponse> => {
+    return apiRequest<CategoriesResponse>("/categories/list.php");
   }
 };
 
 // Settings API
 export const settingsAPI = {
-  getSettings: async (): Promise<any> => {
-    return apiRequest<any>("/settings/get.php");
+  getSettings: async (): Promise<SettingsResponse> => {
+    return apiRequest<SettingsResponse>("/settings/get.php");
   },
   
-  updateSettings: async (settingsData: any): Promise<any> => {
-    return apiRequest<any>("/settings/update.php", {
+  updateSettings: async (settingsData: Record<string, string>): Promise<SettingsResponse> => {
+    return apiRequest<SettingsResponse>("/settings/update.php", {
       method: "POST",
       body: JSON.stringify(settingsData),
     });
@@ -179,8 +247,8 @@ export const settingsAPI = {
 
 // Plans API
 export const plansAPI = {
-  getPlans: async (): Promise<any> => {
-    return apiRequest<any>("/plans/list.php");
+  getPlans: async (): Promise<PlansResponse> => {
+    return apiRequest<PlansResponse>("/plans/list.php");
   }
 };
 
